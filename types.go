@@ -1,5 +1,10 @@
 package vintage
 
+import (
+	"net"
+	"time"
+)
+
 type DirectorType string
 
 const (
@@ -24,3 +29,7 @@ const (
 	DELIVER_STALE State = "deliver_stale"
 	LOG           State = "log"
 )
+
+type Primitive interface {
+	string | int64 | float64 | bool | net.IP | time.Duration | time.Time | *Backend | *Acl
+}

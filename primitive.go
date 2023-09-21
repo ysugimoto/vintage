@@ -6,8 +6,6 @@ import (
 	"time"
 )
 
-// VCLType interface Represents VCL type to Go type.
-// Note that Go does not have BACKEND and ACL type so it translates struct pointer.
 type Value interface {
 	// Need String() method for explicit type conversion in expression
 	String() string
@@ -54,7 +52,9 @@ func (v RTime) Bool() bool { return false }
 
 type Time time.Time
 
+const httpTime = "Mon, 02 Jan 2006 15:04:05 GMT"
+
 func (v Time) String() string {
-	return time.Time(v).Format("Mon, 02 Jan 2006 15:04:05 GMT")
+	return time.Time(v).Format(httpTime)
 }
 func (v Time) Bool() bool { return false }

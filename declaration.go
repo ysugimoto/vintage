@@ -69,18 +69,27 @@ func AclEntry(cidr string, inverse bool) AclOption {
 	}
 }
 
-type Table map[string]Value
-type TableOption func(t Table)
+type Table struct {
+	Name  string
+	Type  string
+	Items map[string]any
+}
 
-func TableItem(name string, value Value) TableOption {
-	return func(t Table) {
-		t[name] = value
+type TableOption func(t *Table)
+
+func TableItem(name string, value any) TableOption {
+	return func(t *Table) {
+		t.Items[name] = value
 	}
 }
 
-func NewTable(items ...TableOption) Table {
+func NewTable(name, itemType string, items ...TableOption) *Table {
+	t := &Table{
+		Name:  name,
+		Type:  itemType,
+		Items: make(map[string]any),
+	}
 
-	t := make(map[string]Value)
 	for i := range items {
 		items[i](t)
 	}

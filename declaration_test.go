@@ -34,29 +34,29 @@ func TestAclDeclaration(t *testing.T) {
 }
 
 func TestTableDeclaration(t *testing.T) {
-	st := NewTable(TableItem("foo", String("bar")))
-	if diff := cmp.Diff(st["foo"].String(), "bar"); diff != "" {
+	st := NewTable("example", "STRING", TableItem("foo", "bar"))
+	if diff := cmp.Diff(st.Items["foo"], "bar"); diff != "" {
 		t.Errorf("String Table: Value unmatch, diff=%s", diff)
 	}
-	it := NewTable(TableItem("foo", Integer(100)))
-	if diff := cmp.Diff(it["foo"], int64(100)); diff != "" {
+	it := NewTable("example", "INTEGER", TableItem("foo", 100))
+	if diff := cmp.Diff(it.Items["foo"], 100); diff != "" {
 		t.Errorf("Integer Table: Value unmatch, diff=%s", diff)
 	}
-	ft := NewTable(TableItem("foo", Float(100.001)))
-	if diff := cmp.Diff(ft["foo"], float64(100.001)); diff != "" {
+	ft := NewTable("example", "FLOAT", TableItem("foo", 100.001))
+	if diff := cmp.Diff(ft.Items["foo"], 100.001); diff != "" {
 		t.Errorf("Float Table: Value unmatch, diff=%s", diff)
 	}
-	bt := NewTable(TableItem("foo", Bool(true)))
-	if diff := cmp.Diff(bt["foo"], true); diff != "" {
+	bt := NewTable("example", "BOOL", TableItem("foo", true))
+	if diff := cmp.Diff(bt.Items["foo"], true); diff != "" {
 		t.Errorf("Bool Table: Value unmatch, diff=%s", diff)
 	}
-	rt := NewTable(TableItem("foo", RTime(time.Second)))
-	if diff := cmp.Diff(rt["foo"], time.Second); diff != "" {
+	rt := NewTable("example", "RTIME", TableItem("foo", time.Second))
+	if diff := cmp.Diff(rt.Items["foo"], time.Second); diff != "" {
 		t.Errorf("RTime Table: Value unmatch, diff=%s", diff)
 	}
 	now := time.Now()
-	tt := NewTable(TableItem("foo", Time(now)))
-	if diff := cmp.Diff(tt["foo"], now); diff != "" {
+	tt := NewTable("example", "TIME", TableItem("foo", now))
+	if diff := cmp.Diff(tt.Items["foo"], now); diff != "" {
 		t.Errorf("Time Table: Value unmatch, diff=%s", diff)
 	}
 }

@@ -1,26 +1,47 @@
 package fastly
 
 import (
+	"bytes"
+	"context"
+	"io"
+
+	"github.com/fastly/compute-sdk-go/fsthttp"
+	"github.com/pkg/errors"
 	"github.com/ysugimoto/vintage"
 )
 
-type Runtime struct {
-	backends map[string]*vintage.Backend
-	acls     map[string]*vintage.Acl
-	tables   map[string]vintage.Table
+type FastlyRuntime struct {
+	vctx            *vintage.Context
+	Request         *fsthttp.Request
+	Response        fsthttp.ResponseWriter
+	BackendResponse *fsthttp.Response
 }
 
-func RuntimeContext() *Runtime {
-	return &Runtime{
-		backends: make(map[string]*vintage.Backend),
-		acls:     make(map[string]*vintage.Acl),
-		tables:   make(map[string]vintage.Table),
+func NewRuntime(w fsthttp.ResponseWriter, r *fsthttp.Request) *FastlyRuntime {
+	return &FastlyRuntime{
+		vctx:     vintage.NewContext(fsthttp.Header{}, r.Header),
+		Request:  r,
+		Response: w,
 	}
 }
 
-func (r *Runtime) Register(name string, item any) {
-	switch t := item.(type) {
-	case *vintage.Backend:
-		r.backends[name] = t
+func (r *FastlyRuntime) Context() *vintage.Context {
+	return r.vctx
+}
+
+func (r *FastlyRuntime) Proxy(ctx context.Context, backend string) (*fsthttp.Response, error) {
+	resp, err := r.Request.Send(ctx, backend)
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
+
+	// To avoid memory leak, read and rewind response body
+	var buf bytes.Buffer
+	if _, err := buf.ReadFrom(resp.Body); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	resp.Body = io.NopCloser(bytes.NewReader(buf.Bytes()))
+	r.BackendResponse = resp
+	r.vctx.ResponseHeader = vintage.NewHeader(resp.Header)
+	return resp, nil
 }
