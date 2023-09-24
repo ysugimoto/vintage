@@ -26,7 +26,7 @@ acl example {
 		return
 	}
 	acl := vcl.Statements[0]
-	tr := NewCoreTransfromer()
+	tr := New().(*transformer)
 	code, err := tr.transformAcl(acl.(*ast.AclDeclaration))
 	if err != nil {
 		t.Errorf("Failed to transform ACL: %s", err)
@@ -39,7 +39,7 @@ acl example {
 	}
 
 	expect := `
-var acl__example = vintage.NewAcl("example",
+var acl__example = vintage.NewAcl(
 	vintage.AclEntry("192.168.0.1/32", false),
 	vintage.AclEntry("192.168.0.2/32", true),
 )
@@ -67,7 +67,7 @@ backend example {
 		return
 	}
 	backend := vcl.Statements[0]
-	tr := NewCoreTransfromer()
+	tr := New().(*transformer)
 	code, err := tr.transformBackend(backend.(*ast.BackendDeclaration))
 	if err != nil {
 		t.Errorf("Failed to transform Backend: %s", err)
@@ -79,7 +79,7 @@ backend example {
 		return
 	}
 	expect := `
-var backend__example = vintage.NewBackend("example", true)
+var backend__example = vintage.NewBackend("example")
 `
 	if diff := cmp.Diff("\n"+string(code), expect); diff != "" {
 		t.Errorf("Backend transform result mismatch, diff=%s", diff)
@@ -102,7 +102,7 @@ director example client {
 		return
 	}
 	d := vcl.Statements[0]
-	tr := NewCoreTransfromer()
+	tr := New().(*transformer)
 	code, err := tr.transformDirector(d.(*ast.DirectorDeclaration))
 	if err != nil {
 		t.Errorf("Failed to transform Director: %s", err)
@@ -142,7 +142,7 @@ table example STRING {
 		return
 	}
 	table := vcl.Statements[0]
-	tr := NewCoreTransfromer()
+	tr := New().(*transformer)
 	code, err := tr.transformTable(table.(*ast.TableDeclaration))
 	if err != nil {
 		t.Errorf("Failed to transform Table: %s", err)
@@ -179,7 +179,7 @@ sub vcl_recv {
 		return
 	}
 	sub := vcl.Statements[0]
-	tr := NewCoreTransfromer()
+	tr := New().(*transformer)
 	code, err := tr.transformSubroutine(sub.(*ast.SubroutineDeclaration))
 	if err != nil {
 		t.Errorf("Unexpected subroutine transforming error: %s", err)

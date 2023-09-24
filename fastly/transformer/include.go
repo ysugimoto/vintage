@@ -11,8 +11,9 @@ import (
 	"github.com/ysugimoto/falco/resolver"
 )
 
-func (tf *CoreTransformer) resolveIncludeStatements(
-	rslv resolver.Resolver, statements []ast.Statement,
+func (t *transformer) resolveIncludeStatements(
+	rslv resolver.Resolver,
+	statements []ast.Statement,
 	isRoot bool,
 ) ([]ast.Statement, error) {
 
@@ -25,18 +26,18 @@ func (tf *CoreTransformer) resolveIncludeStatements(
 		}
 
 		if strings.HasPrefix(include.Module.Value, "snippet::") {
-			if included, err := tf.includeSnippet(include, isRoot); err != nil {
+			if included, err := t.includeSnippet(include, isRoot); err != nil {
 				return nil, errors.WithStack(err)
 			} else {
 				resolved = append(resolved, included...)
 			}
 			continue
 		}
-		included, err := tf.includeFile(rslv, include, isRoot)
+		included, err := t.includeFile(rslv, include, isRoot)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		recursive, err := tf.resolveIncludeStatements(rslv, included, isRoot)
+		recursive, err := t.resolveIncludeStatements(rslv, included, isRoot)
 		if err != nil {
 			return nil, err
 		}
@@ -46,13 +47,13 @@ func (tf *CoreTransformer) resolveIncludeStatements(
 	return resolved, nil
 }
 
-func (tf *CoreTransformer) includeSnippet(include *ast.IncludeStatement, isRoot bool) ([]ast.Statement, error) {
-	if tf.snippets == nil {
+func (t *transformer) includeSnippet(include *ast.IncludeStatement, isRoot bool) ([]ast.Statement, error) {
+	if t.snippets == nil {
 		return nil, errors.WithStack(
 			fmt.Errorf("Remote snippet is not found. Did you run with '-r' option?"),
 		)
 	}
-	snip, ok := tf.snippets.IncludeSnippets[strings.TrimPrefix(include.Module.Value, "snippet::")]
+	snip, ok := t.snippets.IncludeSnippets[strings.TrimPrefix(include.Module.Value, "snippet::")]
 	if !ok {
 		return nil, errors.WithStack(
 			fmt.Errorf("Failed to include VCL snippets '%s'", include.Module.Value),
@@ -64,7 +65,7 @@ func (tf *CoreTransformer) includeSnippet(include *ast.IncludeStatement, isRoot 
 	return loadStatementVCL(include.Module.Value, snip.Data)
 }
 
-func (tf *CoreTransformer) includeFile(
+func (t *transformer) includeFile(
 	rslv resolver.Resolver,
 	include *ast.IncludeStatement,
 	isRoot bool,

@@ -50,21 +50,3 @@ func ucFirst(str string) string {
 	b[0] -= 0x20
 	return string(b)
 }
-
-func prepareCodes(preps ...string) string {
-	var code []string
-	for i := range preps {
-		if preps[i] == "" {
-			continue
-		}
-		code = append(code, preps[i])
-	}
-	return strings.Join(code, lineFeed)
-}
-
-var tmpVarCounter uint
-
-func tmpVar() string {
-	tmpVarCounter++
-	return fmt.Sprintf("tmp_%d", tmpVarCounter)
-}

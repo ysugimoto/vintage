@@ -10,9 +10,8 @@ import (
 	"github.com/ysugimoto/vintage"
 )
 
-func (tf *CoreTransformer) transformBlockStatement(statements []ast.Statement) ([]byte, bool, error) {
+func (t *transformer) transformBlockStatement(statements []ast.Statement) ([]byte, error) {
 	var buf bytes.Buffer
-	var returnExists bool
 
 	for _, stmt := range statements {
 		var code []byte
@@ -20,57 +19,54 @@ func (tf *CoreTransformer) transformBlockStatement(statements []ast.Statement) (
 
 		switch s := stmt.(type) {
 		case *ast.DeclareStatement:
-			code, err = tf.transformDeclareStatement(s)
+			code, err = t.transformDeclareStatement(s)
 		case *ast.ReturnStatement:
-			code, err = tf.transformReturnStatement(s)
-			returnExists = true
+			code, err = t.transformReturnStatement(s)
 		case *ast.SetStatement:
-			code, err = tf.transformSetStatement(s)
+			code, err = t.transformSetStatement(s)
 		}
 		if err != nil {
-			return nil, false, errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
-		if len(code) > 0 {
-			buf.Write(code)
-			buf.WriteString(lineFeed)
-		}
+		buf.Write(code)
+		buf.WriteString(LF)
 	}
 
-	return buf.Bytes(), returnExists, nil
+	return buf.Bytes(), nil
 }
 
-func (tf *CoreTransformer) transformDeclareStatement(stmt *ast.DeclareStatement) ([]byte, error) {
+func (t *transformer) transformDeclareStatement(stmt *ast.DeclareStatement) ([]byte, error) {
 	var buf bytes.Buffer
 
 	name := strings.TrimPrefix(stmt.Name.Value, "var.")
 	switch vintage.VCLType(stmt.ValueType.Value) {
 	case vintage.STRING:
 		buf.WriteString(fmt.Sprintf("var local__%s string", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.STRING, "local__ "+name)
+		t.vars[stmt.Name.Value] = newExpressionValue(vintage.STRING, []byte("local__ "+name))
 	case vintage.INTEGER:
 		buf.WriteString(fmt.Sprintf("var local__%s int64", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.INTEGER, "local__"+name)
+		t.vars[stmt.Name.Value] = newExpressionValue(vintage.INTEGER, []byte("local__"+name))
 	case vintage.BOOL:
 		buf.WriteString(fmt.Sprintf("var local__%s bool", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.BOOL, "local__"+name)
+		t.vars[stmt.Name.Value] = newExpressionValue(vintage.BOOL, []byte("local__"+name))
 	case vintage.FLOAT:
 		buf.WriteString(fmt.Sprintf("var local__%s float64", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.FLOAT, "local__"+name)
+		t.vars[stmt.Name.Value] = newExpressionValue(vintage.FLOAT, []byte("local__"+name))
 	case vintage.BACKEND:
 		buf.WriteString(fmt.Sprintf("var local__%s *vintage.Backend", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.BACKEND, "local__"+name)
+		t.vars[stmt.Name.Value] = newExpressionValue(vintage.BACKEND, []byte("local__"+name))
 	case vintage.IP:
 		buf.WriteString(fmt.Sprintf("var local__%s net.IP", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.IP, "local__"+name)
+		t.vars[stmt.Name.Value] = newExpressionValue(vintage.IP, []byte("local__"+name))
 	case vintage.RTIME:
 		buf.WriteString(fmt.Sprintf("var local__%s time.Duration", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.RTIME, "local__"+name)
+		t.vars[stmt.Name.Value] = newExpressionValue(vintage.RTIME, []byte("local__"+name))
 	case vintage.TIME:
 		buf.WriteString(fmt.Sprintf("var local__%s time.Time", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.TIME, "local__"+name)
+		t.vars[stmt.Name.Value] = newExpressionValue(vintage.TIME, []byte("local__"+name))
 	case vintage.ACL:
 		buf.WriteString(fmt.Sprintf("var local__%s *vintage.Acl", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.ACL, "local__"+name)
+		t.vars[stmt.Name.Value] = newExpressionValue(vintage.ACL, []byte("local__"+name))
 	default:
 		return nil, errors.WithStack(
 			fmt.Errorf("Unexpected variable type declared: %s", stmt.ValueType.Value),
@@ -79,7 +75,7 @@ func (tf *CoreTransformer) transformDeclareStatement(stmt *ast.DeclareStatement)
 	return buf.Bytes(), nil
 }
 
-func (tf *CoreTransformer) transformReturnStatement(stmt *ast.ReturnStatement) ([]byte, error) {
+func (t *transformer) transformReturnStatement(stmt *ast.ReturnStatement) ([]byte, error) {
 	state := "vintage.NONE"
 	if stmt.ReturnExpression != nil {
 		state = "vintage." + strings.ToUpper(strings.Trim(toString(*stmt.ReturnExpression), `"`))
@@ -87,32 +83,36 @@ func (tf *CoreTransformer) transformReturnStatement(stmt *ast.ReturnStatement) (
 	return []byte(fmt.Sprintf("return %s, nil", state)), nil
 }
 
-func (tf *CoreTransformer) transformSetStatement(stmt *ast.SetStatement) ([]byte, error) {
+func (t *transformer) transformSetStatement(stmt *ast.SetStatement) ([]byte, error) {
 	var buf bytes.Buffer
 
 	name := stmt.Ident.Value
 	switch {
 	case strings.HasPrefix(name, "var."):
-		v, ok := tf.vars[name]
+		v, ok := t.vars[name]
 		if !ok {
 			return nil, TransformError(&stmt.Token, "variable %s undefined", name)
 		}
-		val, err := tf.transformExpression(v.Type, stmt.Value)
+		val, err := t.transformExpression(v.Type, stmt.Value)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		buf.WriteString(val.Prepare + v.Code + " = " + val.Code)
+		buf.Write(v.Code)
+		buf.WriteString(" = ")
+		buf.Write(val.Code)
 	case strings.HasPrefix(name, "req.http."),
 		strings.HasPrefix(name, "bereq.http."):
 		name := strings.TrimPrefix(
 			strings.TrimPrefix(name, "bereq.http."),
 			"req.http.",
 		)
-		val, err := tf.transformExpression(vintage.STRING, stmt.Value)
+		val, err := t.transformExpression(vintage.STRING, stmt.Value)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		buf.WriteString(val.Prepare + fmt.Sprintf(`ctx.RequestHeader.Set("%s", %s)`, name, val.Code))
+		buf.WriteString(`ctx.RequestHeader.Set("` + name + `", `)
+		buf.Write(val.Code)
+		buf.WriteString(")")
 	case strings.HasPrefix(name, "beresp.http."),
 		strings.HasPrefix(name, "resp.http."),
 		strings.HasPrefix(name, "obj.http."):
@@ -123,11 +123,13 @@ func (tf *CoreTransformer) transformSetStatement(stmt *ast.SetStatement) ([]byte
 			),
 			"beresp.http.",
 		)
-		val, err := tf.transformExpression(vintage.STRING, stmt.Value)
+		val, err := t.transformExpression(vintage.STRING, stmt.Value)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		buf.WriteString(val.Prepare + fmt.Sprintf(`ctx.ResponseHeader.Set("%s", %s)`, name, val.Code))
+		buf.WriteString(`ctx.ResponseHeader.Set("` + name + `", `)
+		buf.Write(val.Code)
+		buf.WriteString(")")
 	default:
 		break
 		// format, expectType, err := variables.GetType(name)

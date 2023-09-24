@@ -38,10 +38,10 @@ func (v Bool) String() string {
 }
 func (v Bool) Bool() bool { return bool(v) }
 
-type IP net.IP
+type ip net.IP
 
-func (v IP) String() string { return v.String() }
-func (v IP) Bool() bool     { return false }
+func (v ip) String() string { return v.String() }
+func (v ip) Bool() bool     { return false }
 
 type RTime time.Duration
 

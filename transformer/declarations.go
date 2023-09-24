@@ -6,18 +6,19 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/ysugimoto/falco/ast"
+	"github.com/ysugimoto/vintage"
 )
 
-const LF = "\n"
+const lineFeed = "\n"
 
-func (t *transformer) transformAcl(acl *ast.AclDeclaration) ([]byte, error) {
+func (tf *CoreTransformer) transformAcl(acl *ast.AclDeclaration) ([]byte, error) {
 	var buf bytes.Buffer
 
 	name := acl.Name.String()
-	t.acls[name] = "acl__" + name
+	tf.acls[name] = newExpressionValue(vintage.ACL, "acl__"+name)
 
 	buf.WriteString(
-		fmt.Sprintf(`var acl__%s = vintage.NewAcl(`+LF, name),
+		fmt.Sprintf(`var acl__%s = vintage.NewAcl("%s",`+lineFeed, name, name),
 	)
 
 	for _, cidr := range acl.CIDRs {
@@ -30,36 +31,38 @@ func (t *transformer) transformAcl(acl *ast.AclDeclaration) ([]byte, error) {
 			inverse = cidr.Inverse.Value
 		}
 		buf.WriteString(
-			fmt.Sprintf(`vintage.AclEntry("%s/%s", %t),`+LF, cidr.IP.String(), mask, inverse),
+			fmt.Sprintf(`vintage.AclEntry("%s/%s", %t),`+lineFeed, cidr.IP.String(), mask, inverse),
 		)
 	}
 
-	buf.WriteString(")" + LF)
+	buf.WriteString(")" + lineFeed)
 	return buf.Bytes(), nil
 }
 
-func (t *transformer) transformBackend(backend *ast.BackendDeclaration) ([]byte, error) {
+func (tf *CoreTransformer) transformBackend(backend *ast.BackendDeclaration) ([]byte, error) {
 	var buf bytes.Buffer
 
 	name := backend.Name.String()
-	t.backends[name] = "backend__" + name
+	// We will use first found backend as default
+	isDefault := len(tf.backends) == 0
+	tf.backends[name] = newExpressionValue(vintage.BACKEND, "backend__"+name)
 
 	buf.WriteString(
-		fmt.Sprintf(`var backend__%s = vintage.NewBackend("%s")`+LF, name, name),
+		fmt.Sprintf(`var backend__%s = vintage.NewBackend("%s", %t)`+lineFeed, name, name, isDefault),
 	)
 
 	return buf.Bytes(), nil
 }
 
-func (t *transformer) transformDirector(director *ast.DirectorDeclaration) ([]byte, error) {
+func (tf *CoreTransformer) transformDirector(director *ast.DirectorDeclaration) ([]byte, error) {
 	var buf bytes.Buffer
 
 	name := director.Name.String()
-	t.backends[name] = "director__" + name
+	tf.backends[name] = newExpressionValue(vintage.BACKEND, "director__"+name)
 
 	buf.WriteString(
 		fmt.Sprintf(
-			`var director__%s = vintage.NewDirector("%s", "%s",`+LF,
+			`var director__%s = vintage.NewDirector("%s", "%s",`+lineFeed,
 			name, name, director.DirectorType.String(),
 		),
 	)
@@ -67,29 +70,29 @@ func (t *transformer) transformDirector(director *ast.DirectorDeclaration) ([]by
 		switch p := prop.(type) {
 		case *ast.DirectorProperty:
 			buf.WriteString(
-				fmt.Sprintf(`vintage.DirectorProperty("%s", %s),`+LF, p.Key.Value, toString(p.Value)),
+				fmt.Sprintf(`vintage.DirectorProperty("%s", %s),`+lineFeed, p.Key.Value, toString(p.Value)),
 			)
 		case *ast.DirectorBackendObject:
-			buf.WriteString(`vintage.DirectorBackend(` + LF)
+			buf.WriteString(`vintage.DirectorBackend(` + lineFeed)
 			for _, v := range p.Values {
 				buf.WriteString(
-					fmt.Sprintf(`vintage.DirectorProperty("%s", %s),`+LF, v.Key.Value, toString(v.Value)),
+					fmt.Sprintf(`vintage.DirectorProperty("%s", %s),`+lineFeed, v.Key.Value, toString(v.Value)),
 				)
 			}
-			buf.WriteString(")," + LF)
+			buf.WriteString(")," + lineFeed)
 		}
 	}
 
-	buf.WriteString(")" + LF)
+	buf.WriteString(")" + lineFeed)
 
 	return buf.Bytes(), nil
 }
 
-func (t *transformer) transformTable(table *ast.TableDeclaration) ([]byte, error) {
+func (tf *CoreTransformer) transformTable(table *ast.TableDeclaration) ([]byte, error) {
 	var buf bytes.Buffer
 
 	name := table.Name.String()
-	t.tables[name] = "table__" + name
+	tf.tables[name] = newExpressionValue(vintage.IDENT, "table__"+name)
 
 	tableType := "STRING"
 	if table.ValueType != nil {
@@ -97,31 +100,53 @@ func (t *transformer) transformTable(table *ast.TableDeclaration) ([]byte, error
 	}
 
 	buf.WriteString(
-		fmt.Sprintf(`var table__%s = vintage.NewTable("%s", "%s",`+LF, name, name, tableType),
+		fmt.Sprintf(`var table__%s = vintage.NewTable("%s", "%s",`+lineFeed, name, name, tableType),
 	)
 
 	for _, prop := range table.Properties {
 		buf.WriteString(
-			fmt.Sprintf(`vintage.TableItem("%s", %s),`+LF, prop.Key.Value, prop.Value),
+			fmt.Sprintf(`vintage.TableItem("%s", %s),`+lineFeed, prop.Key.Value, prop.Value),
 		)
 	}
 
-	buf.WriteString(")" + LF)
+	buf.WriteString(")" + lineFeed)
 
 	return buf.Bytes(), nil
 }
 
-func (t *transformer) transformSubroutine(sub *ast.SubroutineDeclaration) ([]byte, error) {
+func (tf *CoreTransformer) transformSubroutine(sub *ast.SubroutineDeclaration) ([]byte, error) {
 	var buf bytes.Buffer
 
+	name := sub.Name.String()
+	if sub.ReturnType != nil {
+		tf.functionSubroutines[name] = newExpressionValue(vintage.IDENT, name)
+		buf.WriteString(fmt.Sprintf(
+			"func %s(ctx *fastly.Runtime) (%s, error) {"+lineFeed,
+			name,
+			vintage.GoTypeString(vintage.VCLType(sub.ReturnType.Value)),
+		))
+		inside, _, err := tf.transformBlockStatement(sub.Block.Statements)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		buf.Write(inside)
+		buf.WriteString("}\n")
+		return buf.Bytes(), nil
+	}
+
+	tf.subroutines[name] = newExpressionValue(vintage.IDENT, name)
+
 	buf.WriteString(
-		fmt.Sprintf("func %s(ctx *fastly.Runtime) (vintage.State, error) {\n", sub.Name.String()),
+		fmt.Sprintf("func %s(ctx *fastly.Runtime) (vintage.State, error) {"+lineFeed, name),
 	)
-	inside, err := t.transformBlockStatement(sub.Block.Statements)
+	inside, rs, err := tf.transformBlockStatement(sub.Block.Statements)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 	buf.Write(inside)
+	if !rs {
+		buf.WriteString(`return vintage.NONE, nil` + lineFeed)
+	}
 	buf.WriteString("}\n")
 
 	return buf.Bytes(), nil

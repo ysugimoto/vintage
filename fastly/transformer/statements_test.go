@@ -31,7 +31,7 @@ func TestTransformDeclareStatement(t *testing.T) {
 			t.Errorf("Unexpected parse error: %s", err)
 			continue
 		}
-		tr := NewCoreTransfromer()
+		tr := New().(*transformer)
 		code, err := tr.transformDeclareStatement(stmt[0].(*ast.DeclareStatement))
 		if err != nil {
 			t.Errorf("Declaration transforming error: %s", err)

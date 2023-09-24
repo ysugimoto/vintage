@@ -1,6 +1,7 @@
 package transformer
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"strings"
@@ -11,7 +12,7 @@ import (
 	"github.com/ysugimoto/vintage"
 )
 
-func (tf *CoreTransformer) transformExpression(
+func (tf *transformer) transformExpression(
 	expect vintage.VCLType,
 	expr ast.Expression,
 ) (*expressionValue, error) {
@@ -23,15 +24,15 @@ func (tf *CoreTransformer) transformExpression(
 	case *ast.Ident:
 		value, err = tf.transformIdentValue(t)
 	case *ast.IP:
-		value = newExpressionValue(vintage.IP, `"`+net.ParseIP(t.Value).String()+`"`)
+		value = newExpressionValue(vintage.IP, []byte(`"`+net.ParseIP(t.Value).String()+`"`))
 	case *ast.Boolean:
-		value = newExpressionValue(vintage.BOOL, fmt.Sprintf("%t", t.Value))
+		value = newExpressionValue(vintage.BOOL, []byte(fmt.Sprintf("%t", t.Value)))
 	case *ast.Integer:
-		value = newExpressionValue(vintage.INTEGER, fmt.Sprint(t.Value))
+		value = newExpressionValue(vintage.INTEGER, []byte(fmt.Sprint(t.Value)))
 	case *ast.Float:
-		value = newExpressionValue(vintage.FLOAT, fmt.Sprint(t.Value))
+		value = newExpressionValue(vintage.FLOAT, []byte(fmt.Sprint(t.Value)))
 	case *ast.String:
-		value = newExpressionValue(vintage.STRING, `"`+t.Value+`"`)
+		value = newExpressionValue(vintage.STRING, []byte(`"`+t.Value+`"`))
 	case *ast.RTime:
 		var val time.Duration
 		switch {
@@ -41,20 +42,20 @@ func (tf *CoreTransformer) transformExpression(
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}
-			value = newExpressionValue(vintage.RTIME, fmt.Sprintf("time.Duration(%d * time.Hour)", val*24))
+			value = newExpressionValue(vintage.RTIME, []byte(fmt.Sprintf("(%d * time.Hour)", val*24)))
 		case strings.HasSuffix(t.Value, "y"):
 			num := strings.TrimSuffix(t.Value, "y")
 			val, err = time.ParseDuration(num + "h")
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}
-			value = newExpressionValue(vintage.RTIME, fmt.Sprintf("time.Duration(%d * time.Hour)", val*24*365))
+			value = newExpressionValue(vintage.RTIME, []byte(fmt.Sprintf("(%d * time.Hour)", val*24*365)))
 		default:
 			val, err = time.ParseDuration(t.Value)
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}
-			value = newExpressionValue(vintage.RTIME, fmt.Sprintf("time.Duration(%d * time.Second)", val))
+			value = newExpressionValue(vintage.RTIME, []byte(fmt.Sprintf("(%d * time.Second)", val)))
 		}
 
 	// Combinated expressions
@@ -76,7 +77,7 @@ func (tf *CoreTransformer) transformExpression(
 	return value.Conversion(expect), nil
 }
 
-func (tf *CoreTransformer) transformIdentValue(ident *ast.Ident) (*expressionValue, error) {
+func (tf *transformer) transformIdentValue(ident *ast.Ident) (*expressionValue, error) {
 	name := ident.Value
 	if v, ok := tf.backends[name]; ok {
 		return v, nil
@@ -96,21 +97,21 @@ func (tf *CoreTransformer) transformIdentValue(ident *ast.Ident) (*expressionVal
 	return nil, TransformError(&ident.GetMeta().Token, "Undefined indent: %s", name)
 }
 
-func (tf *CoreTransformer) transformPrefixExpression(expr *ast.PrefixExpression) (*expressionValue, error) {
+func (tf *transformer) transformPrefixExpression(expr *ast.PrefixExpression) (*expressionValue, error) {
 	switch expr.Operator {
 	case "!":
 		right, err := tf.transformExpression(vintage.BOOL, expr.Right)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		right.Code = "!" + right.Code
+		right.Code = append([]byte("!"), right.Code...)
 		return right, nil
 	case "-":
 		right, err := tf.transformExpression(vintage.INTEGER, expr.Right)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		right.Code = "-" + right.Code
+		right.Code = append([]byte("-"), right.Code...)
 		return right, nil
 	case "+":
 		right, err := tf.transformExpression(vintage.STRING, expr.Right)
@@ -122,17 +123,18 @@ func (tf *CoreTransformer) transformPrefixExpression(expr *ast.PrefixExpression)
 	return nil, TransformError(&expr.GetMeta().Token, "Unexpected prefix operator found: %s", expr.Operator)
 }
 
-func (tf *CoreTransformer) transformGroupedExpression(expr *ast.GroupedExpression) (*expressionValue, error) {
+func (tf *transformer) transformGroupedExpression(expr *ast.GroupedExpression) (*expressionValue, error) {
 	right, err := tf.transformExpression(vintage.NULL, expr.Right)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	right.Code = fmt.Sprintf("(%s)", right.Code)
+	right.Code = append([]byte("("), right.Code...)
+	right.Code = append(right.Code, ')')
 	return right, nil
 }
 
-func (tf *CoreTransformer) transformIfExpression(expect vintage.VCLType, expr *ast.IfExpression) (*expressionValue, error) {
+func (tf *transformer) transformIfExpression(expect vintage.VCLType, expr *ast.IfExpression) (*expressionValue, error) {
 	condition, err := tf.transformExpression(vintage.BOOL, expr.Condition)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -146,20 +148,20 @@ func (tf *CoreTransformer) transformIfExpression(expect vintage.VCLType, expr *a
 		return nil, errors.WithStack(err)
 	}
 
-	v := tf.prepVar()
-	preps := prepareCodes(
-		condition.Prepare,
-		consequence.Prepare,
-		alternative.Prepare,
-		fmt.Sprintf("%s := %s", v, alternative.Code),
-		fmt.Sprintf("if %s {", condition.Code),
-		fmt.Sprintf(consequence.Code),
-		"}",
-	)
-	return newExpressionValue(expect, v, Prepare(preps)), nil
-}
+	var buf bytes.Buffer
+	buf.WriteString(fmt.Sprintf("vintage.TernaryOperator[%s](", vintage.GoTypeString(expect)))
+	buf.Write(condition.Code)
+	buf.WriteString(", ")
+	buf.Write(consequence.Code)
+	buf.WriteString(", ")
+	buf.Write(alternative.Code)
+	buf.WriteString(")")
 
-func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (*expressionValue, error) {
+	return newExpressionValue(expect, buf.Bytes()), nil
+}
+func (tf *transformer) transformInfixExpression(expr *ast.InfixExpression) (*expressionValue, error) {
+	var buf bytes.Buffer
+
 	switch expr.Operator {
 	case "==", "!=", ">", "<", ">=", "<=":
 		left, err := tf.transformExpression(vintage.NULL, expr.Left)
@@ -170,13 +172,10 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-
-		return newExpressionValue(
-			vintage.BOOL,
-			fmt.Sprintf("%s %s %s", left.Code, expr.Operator, right.Code),
-			Prepare(prepareCodes(left.Prepare, right.Prepare)),
-		), nil
-
+		buf.Write(left.Code)
+		buf.WriteString(" " + expr.Operator + " ")
+		buf.Write(right.Code)
+		return newExpressionValue(vintage.BOOL, buf.Bytes()), nil
 	// "~" or "!~" need regular expression matching
 	case "~", "!~":
 		left, err := tf.transformExpression(vintage.NULL, expr.Left)
@@ -189,29 +188,22 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 		}
 		// If right expression is ACL, do CIDR matching
 		if right.Type == vintage.ACL {
-			var inverse string
 			if expr.Operator == "!~" {
-				inverse = "!"
+				buf.WriteString("!")
 			}
-			return newExpressionValue(
-				vintage.BOOL,
-				fmt.Sprintf("%s%s.Match(%s)", inverse, right.Code, left.Code),
-				Prepare(prepareCodes(left.Prepare, right.Prepare)),
-			), nil
+			buf.Write(right.Code)
+			buf.WriteString(".Match(")
+			buf.Write(left.Code)
+			buf.WriteString(")")
+			return newExpressionValue(vintage.BOOL, buf.Bytes()), nil
 		}
 
-		// Otherwise, string matching, import regexp package
-		tf.Packages.Add("regexp", "")
-		v := tf.prepVar()
-		preps := prepareCodes(
-			left.Prepare,
-			right.Prepare,
-			fmt.Sprintf("%s, err := regexp.MatchString(%s, %s)", v, right.Code, left.Code),
-			"if err != nil {",
-			"return vintage.NONE, err",
-			"}",
-		)
-		return newExpressionValue(vintage.BOOL, v, Prepare(preps)), nil
+		// Otherwise, string matching
+		buf.WriteString("vintage.RegexpMatchOperator(")
+		buf.Write(right.Code)
+		buf.WriteString(", ")
+		buf.Write(left.Code)
+		return newExpressionValue(vintage.BOOL, buf.Bytes()), nil
 
 	case "||", "&&":
 		left, err := tf.transformExpression(vintage.BOOL, expr.Left)
@@ -222,12 +214,10 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		return newExpressionValue(
-			vintage.BOOL,
-			fmt.Sprintf("%s %s %s", left.Code, expr.Operator, right.Code),
-			Prepare(prepareCodes(left.Prepare, right.Prepare)),
-		), nil
-
+		buf.Write(left.Code)
+		buf.WriteString(" " + expr.Operator + " ")
+		buf.Write(right.Code)
+		return newExpressionValue(vintage.BOOL, buf.Bytes()), nil
 	// "+" means string concatenation
 	case "+":
 		left, err := tf.transformExpression(vintage.STRING, expr.Left)
@@ -238,26 +228,21 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		return newExpressionValue(
-			vintage.BOOL,
-			fmt.Sprintf("%s + %s", left.Code, right.Code),
-			Prepare(prepareCodes(left.Prepare, right.Prepare)),
-		), nil
+		buf.Write(left.Code)
+		buf.WriteString(" + ")
+		buf.Write(right.Code)
+		return newExpressionValue(vintage.STRING, buf.Bytes()), nil
 	}
 	return nil, TransformError(&expr.GetMeta().Token, "Unexpected infix operator: %s", expr.Operator)
 }
 
-func (tf *CoreTransformer) transformFunctionCallExpression(
-	expect vintage.VCLType,
-	expr *ast.FunctionCallExpression,
-) (*expressionValue, error) {
-
-	tf.Packages.Add("github.com/ysugimoto/vintage/builtin", "")
+func (tf *transformer) transformFunctionCallExpression(expect vintage.VCLType, expr *ast.FunctionCallExpression) (*expressionValue, error) {
+	tf.packages.Add("github.com/ysugimoto/vintage/builtin", "")
 
 	// TODO: add function arguments expression
 	call := fmt.Sprintf(
 		"vintage.%s()",
 		ucFirst(strings.ReplaceAll(expr.Function.Value, ".", "_")),
 	)
-	return newExpressionValue(expect, call), nil
+	return newExpressionValue(expect, []byte(call)), nil
 }

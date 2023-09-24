@@ -3,13 +3,15 @@ package vintage
 import "net"
 
 type Backend struct {
-	Name     string
-	Director *Director
+	Name      string
+	IsDefault bool
+	Director  *Director
 }
 
-func NewBackend(name string) *Backend {
+func NewBackend(name string, isDefault bool) *Backend {
 	return &Backend{
-		Name: name,
+		Name:      name,
+		IsDefault: isDefault,
 	}
 }
 

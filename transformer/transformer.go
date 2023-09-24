@@ -12,24 +12,30 @@ import (
 	"github.com/ysugimoto/falco/resolver"
 )
 
-type Transformer interface {
-	Transform(resolver.Resolver) ([]byte, error)
+type CoreTransformer struct {
+	snippets            *context.FastlySnippet
+	acls                map[string]*expressionValue
+	backends            map[string]*expressionValue
+	tables              map[string]*expressionValue
+	subroutines         map[string]*expressionValue
+	functionSubroutines map[string]*expressionValue
+	Packages            Packages
+
+	vars      map[string]*expressionValue
+	prepOrder int
 }
 
-type transformer struct {
-	snippets *context.FastlySnippet
-	acls     map[string]string
-	backends map[string]string
-	tables   map[string]string
-	vars     map[string]string
-}
-
-func New(opts ...Option) Transformer {
-	t := &transformer{
-		acls:     make(map[string]string),
-		backends: make(map[string]string),
-		tables:   make(map[string]string),
-		vars:     make(map[string]string),
+func NewCoreTransfromer(opts ...Option) *CoreTransformer {
+	t := &CoreTransformer{
+		acls:                make(map[string]*expressionValue),
+		backends:            make(map[string]*expressionValue),
+		tables:              make(map[string]*expressionValue),
+		vars:                make(map[string]*expressionValue),
+		subroutines:         make(map[string]*expressionValue),
+		functionSubroutines: make(map[string]*expressionValue),
+		Packages: Packages{
+			"github.com/ysugimoto/vintage": {},
+		},
 	}
 	for i := range opts {
 		opts[i](t)
@@ -37,7 +43,17 @@ func New(opts ...Option) Transformer {
 	return t
 }
 
-func (t *transformer) Transform(rslv resolver.Resolver) ([]byte, error) {
+func (tf *CoreTransformer) TemplateVariables() map[string]any {
+	return map[string]any{
+		"Packages":    tf.Packages,
+		"Subroutines": tf.subroutines,
+		"Acls":        tf.acls,
+		"Backends":    tf.backends,
+		"Tables":      tf.tables,
+	}
+}
+
+func (tf *CoreTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 	main, err := rslv.MainVCL()
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -50,8 +66,8 @@ func (t *transformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	if t.snippets != nil {
-		for _, snip := range t.snippets.EmbedSnippets() {
+	if tf.snippets != nil {
+		for _, snip := range tf.snippets.EmbedSnippets() {
 			s, err := parser.New(
 				lexer.NewFromString(snip.Data, lexer.WithFile(snip.Name)),
 			).ParseVCL()
@@ -62,33 +78,27 @@ func (t *transformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 		}
 	}
 
-	vcl.Statements, err = t.resolveIncludeStatements(rslv, vcl.Statements, true)
+	vcl.Statements, err = tf.resolveIncludeStatements(rslv, vcl.Statements, true)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	buf, err := t.transform(vcl.Statements)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return buf, nil
-}
 
-func (t *transformer) transform(statements []ast.Statement) ([]byte, error) {
 	var buf bytes.Buffer
 	var code []byte
-	var err error
-	for _, stmt := range statements {
+	for _, stmt := range vcl.Statements {
 		switch s := stmt.(type) {
 		case *ast.AclDeclaration:
-			code, err = t.transformAcl(s)
+			code, err = tf.transformAcl(s)
 		case *ast.BackendDeclaration:
-			code, err = t.transformBackend(s)
+			code, err = tf.transformBackend(s)
 		case *ast.DirectorDeclaration:
-			code, err = t.transformDirector(s)
+			code, err = tf.transformDirector(s)
 		case *ast.TableDeclaration:
-			code, err = t.transformTable(s)
+			code, err = tf.transformTable(s)
 		case *ast.SubroutineDeclaration:
-			code, err = t.transformSubroutine(s)
+			// Reset local variables for each subroutines
+			tf.vars = make(map[string]*expressionValue)
+			code, err = tf.transformSubroutine(s)
 		// Currently we don't support penaltybox and ratecounter
 		// case *ast.PenaltyboxDeclaration:
 		// case *ast.RatecounterDeclaration:
@@ -99,6 +109,7 @@ func (t *transformer) transform(statements []ast.Statement) ([]byte, error) {
 			return nil, errors.WithStack(err)
 		}
 		buf.Write(code)
+		buf.WriteString(lineFeed)
 	}
 
 	return buf.Bytes(), nil
