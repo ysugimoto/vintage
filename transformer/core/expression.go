@@ -1,4 +1,4 @@
-package transformer
+package core
 
 import (
 	"fmt"
@@ -154,17 +154,19 @@ func (tf *CoreTransformer) transformIfExpression(expect vintage.VCLType, expr *a
 		return nil, errors.WithStack(err)
 	}
 
-	v := tmpVar()
-	preps := prepareCodes(
-		condition.Prepare,
-		consequence.Prepare,
-		alternative.Prepare,
-		fmt.Sprintf("%s := %s", v, alternative.Code),
-		fmt.Sprintf("if %s {", condition.Code),
-		fmt.Sprintf(consequence.Code),
-		"}",
-	)
-	return NewExpressionValue(expect, v, Prepare(preps)), nil
+	v := Temporary()
+	return NewExpressionValue(
+		expect,
+		v,
+		Prepare(
+			condition.Prepare,
+			consequence.Prepare,
+			alternative.Prepare,
+			fmt.Sprintf("%s := %s", v, alternative.Code),
+			fmt.Sprintf("if %s {", condition.Code),
+			fmt.Sprintf(consequence.Code),
+			"}",
+		)), nil
 }
 
 func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (*ExpressionValue, error) {
@@ -182,7 +184,7 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 		return NewExpressionValue(
 			vintage.BOOL,
 			fmt.Sprintf("%s %s %s", left.Code, expr.Operator, right.Code),
-			Prepare(prepareCodes(left.Prepare, right.Prepare)),
+			Prepare(left.Prepare, right.Prepare),
 		), nil
 
 	// "~" or "!~" need regular expression matching
@@ -204,22 +206,25 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 			return NewExpressionValue(
 				vintage.BOOL,
 				fmt.Sprintf("%s%s.Match(%s)", inverse, right.Code, left.Code),
-				Prepare(prepareCodes(left.Prepare, right.Prepare)),
+				Prepare(left.Prepare, right.Prepare),
 			), nil
 		}
 
 		// Otherwise, string matching, import regexp package
 		tf.Packages.Add("regexp", "")
-		v := tmpVar()
-		preps := prepareCodes(
-			left.Prepare,
-			right.Prepare,
-			fmt.Sprintf("%s, err := regexp.MatchString(%s, %s)", v, right.Code, left.Code),
-			"if err != nil {",
-			"return vintage.NONE, err",
-			"}",
-		)
-		return NewExpressionValue(vintage.BOOL, v, Prepare(preps)), nil
+		v := Temporary()
+		return NewExpressionValue(
+			vintage.BOOL,
+			v,
+			Prepare(
+				left.Prepare,
+				right.Prepare,
+				fmt.Sprintf("%s, err := regexp.MatchString(%s, %s)", v, right.Code, left.Code),
+				"if err != nil {",
+				"return vintage.NONE, err",
+				"}",
+			),
+		), nil
 
 	case "||", "&&":
 		left, err := tf.transformExpression(vintage.BOOL, expr.Left)
@@ -233,7 +238,7 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 		return NewExpressionValue(
 			vintage.BOOL,
 			fmt.Sprintf("%s %s %s", left.Code, expr.Operator, right.Code),
-			Prepare(prepareCodes(left.Prepare, right.Prepare)),
+			Prepare(left.Prepare, right.Prepare),
 		), nil
 
 	// "+" means string concatenation
@@ -249,7 +254,7 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 		return NewExpressionValue(
 			vintage.BOOL,
 			fmt.Sprintf("%s + %s", left.Code, right.Code),
-			Prepare(prepareCodes(left.Prepare, right.Prepare)),
+			Prepare(left.Prepare, right.Prepare),
 		), nil
 	}
 	return nil, TransformError(&expr.GetMeta().Token, "Unexpected infix operator: %s", expr.Operator)

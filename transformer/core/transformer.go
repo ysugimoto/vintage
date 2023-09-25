@@ -1,4 +1,4 @@
-package transformer
+package core
 
 import (
 	"bytes"
@@ -25,7 +25,7 @@ type CoreTransformer struct {
 	variables Variable
 }
 
-func NewCoreTransfromer(opts ...Option) *CoreTransformer {
+func NewCoreTransfromer(opts ...TransformOption) *CoreTransformer {
 	t := &CoreTransformer{
 		acls:                make(map[string]*ExpressionValue),
 		backends:            make(map[string]*ExpressionValue),

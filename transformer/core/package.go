@@ -1,4 +1,4 @@
-package transformer
+package core
 
 type Package struct {
 	Alias string

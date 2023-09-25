@@ -1,4 +1,4 @@
-package transformer
+package core
 
 import "github.com/ysugimoto/falco/resolver"
 

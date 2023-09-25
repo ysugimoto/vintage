@@ -8,16 +8,18 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/ysugimoto/falco/resolver"
-	"github.com/ysugimoto/vintage/transformer"
+	"github.com/ysugimoto/vintage/transformer/core"
 )
 
 type FastlyTransformer struct {
-	*transformer.CoreTransformer
+	*core.CoreTransformer
 }
 
-func NewFastlyTransformer(opts ...transformer.Option) *FastlyTransformer {
+func NewFastlyTransformer(opts ...core.TransformOption) *FastlyTransformer {
+	// Add Fastly specific variable resolver
+	opts = append(opts, core.WithVariables(NewFastlyVariable()))
 	f := &FastlyTransformer{
-		transformer.NewCoreTransfromer(opts...),
+		core.NewCoreTransfromer(opts...),
 	}
 	f.Packages.Add("github.com/ysugimoto/vintage/runtime/fastly", "")
 	f.Packages.Add("github.com/fastly/compute-sdk-go/fsthttp", "")

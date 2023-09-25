@@ -20,16 +20,16 @@ func VclEdgeHander() fsthttp.Handler {
 		runtime := fastly.NewRuntime(r)
 		runtime.Register(
 			{{- range $key, $val := .Backends}}
-			vintage.BackendResource[*fastly.Runtime]("{{ $key }}", {{ $val.String }}),
+			vintage.BackendResource[*fastly.Runtime]("{{ $key }}", {{ $val.Code }}),
 			{{- end}}
 			{{- range $key, $val := .Acls}}
-			vintage.AclResource[*fastly.Runtime]("{{ $key }}", {{ $val.String }}),
+			vintage.AclResource[*fastly.Runtime]("{{ $key }}", {{ $val.Code }}),
 			{{- end}}
 			{{- range $key, $val := .Tables}}
-			vintage.TableResource[*fastly.Runtime]("{{ $key }}", {{ $val.String }}),
+			vintage.TableResource[*fastly.Runtime]("{{ $key }}", {{ $val.Code }}),
 			{{- end}}
 			{{- range $key, $val := .Subroutines}}
-			vintage.SubroutineResource("{{ $key }}", {{ $val.String }}),
+			vintage.SubroutineResource("{{ $key }}", {{ $val.Code }}),
 			{{- end}}
 		)
 		resp, err := runtime.Execute(ctx)
