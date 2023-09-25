@@ -14,24 +14,24 @@ import (
 func (tf *CoreTransformer) transformExpression(
 	expect vintage.VCLType,
 	expr ast.Expression,
-) (*expressionValue, error) {
+) (*ExpressionValue, error) {
 
-	var value *expressionValue
+	var value *ExpressionValue
 	var err error
 
 	switch t := expr.(type) {
 	case *ast.Ident:
 		value, err = tf.transformIdentValue(t)
 	case *ast.IP:
-		value = newExpressionValue(vintage.IP, `"`+net.ParseIP(t.Value).String()+`"`)
+		value = NewExpressionValue(vintage.IP, `"`+net.ParseIP(t.Value).String()+`"`)
 	case *ast.Boolean:
-		value = newExpressionValue(vintage.BOOL, fmt.Sprintf("%t", t.Value))
+		value = NewExpressionValue(vintage.BOOL, fmt.Sprintf("%t", t.Value))
 	case *ast.Integer:
-		value = newExpressionValue(vintage.INTEGER, fmt.Sprint(t.Value))
+		value = NewExpressionValue(vintage.INTEGER, fmt.Sprint(t.Value))
 	case *ast.Float:
-		value = newExpressionValue(vintage.FLOAT, fmt.Sprint(t.Value))
+		value = NewExpressionValue(vintage.FLOAT, fmt.Sprint(t.Value))
 	case *ast.String:
-		value = newExpressionValue(vintage.STRING, `"`+t.Value+`"`)
+		value = NewExpressionValue(vintage.STRING, `"`+t.Value+`"`)
 	case *ast.RTime:
 		var val time.Duration
 		switch {
@@ -41,20 +41,20 @@ func (tf *CoreTransformer) transformExpression(
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}
-			value = newExpressionValue(vintage.RTIME, fmt.Sprintf("time.Duration(%d * time.Hour)", val*24))
+			value = NewExpressionValue(vintage.RTIME, fmt.Sprintf("time.Duration(%d * time.Hour)", val*24))
 		case strings.HasSuffix(t.Value, "y"):
 			num := strings.TrimSuffix(t.Value, "y")
 			val, err = time.ParseDuration(num + "h")
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}
-			value = newExpressionValue(vintage.RTIME, fmt.Sprintf("time.Duration(%d * time.Hour)", val*24*365))
+			value = NewExpressionValue(vintage.RTIME, fmt.Sprintf("time.Duration(%d * time.Hour)", val*24*365))
 		default:
 			val, err = time.ParseDuration(t.Value)
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}
-			value = newExpressionValue(vintage.RTIME, fmt.Sprintf("time.Duration(%d * time.Second)", val))
+			value = NewExpressionValue(vintage.RTIME, fmt.Sprintf("time.Duration(%d * time.Second)", val))
 		}
 
 	// Combinated expressions
@@ -73,10 +73,18 @@ func (tf *CoreTransformer) transformExpression(
 	if err != nil {
 		return nil, TransformError(&expr.GetMeta().Token, "Undefined expression found")
 	}
+
+	// Add dependent packages for the runtime
+	if value.Dependencies != nil {
+		for key, pkg := range value.Dependencies {
+			tf.Packages.Add(key, pkg.Alias)
+		}
+	}
+
 	return value.Conversion(expect), nil
 }
 
-func (tf *CoreTransformer) transformIdentValue(ident *ast.Ident) (*expressionValue, error) {
+func (tf *CoreTransformer) transformIdentValue(ident *ast.Ident) (*ExpressionValue, error) {
 	name := ident.Value
 	if v, ok := tf.backends[name]; ok {
 		return v, nil
@@ -96,7 +104,7 @@ func (tf *CoreTransformer) transformIdentValue(ident *ast.Ident) (*expressionVal
 	return nil, TransformError(&ident.GetMeta().Token, "Undefined indent: %s", name)
 }
 
-func (tf *CoreTransformer) transformPrefixExpression(expr *ast.PrefixExpression) (*expressionValue, error) {
+func (tf *CoreTransformer) transformPrefixExpression(expr *ast.PrefixExpression) (*ExpressionValue, error) {
 	switch expr.Operator {
 	case "!":
 		right, err := tf.transformExpression(vintage.BOOL, expr.Right)
@@ -122,7 +130,7 @@ func (tf *CoreTransformer) transformPrefixExpression(expr *ast.PrefixExpression)
 	return nil, TransformError(&expr.GetMeta().Token, "Unexpected prefix operator found: %s", expr.Operator)
 }
 
-func (tf *CoreTransformer) transformGroupedExpression(expr *ast.GroupedExpression) (*expressionValue, error) {
+func (tf *CoreTransformer) transformGroupedExpression(expr *ast.GroupedExpression) (*ExpressionValue, error) {
 	right, err := tf.transformExpression(vintage.NULL, expr.Right)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -132,7 +140,7 @@ func (tf *CoreTransformer) transformGroupedExpression(expr *ast.GroupedExpressio
 	return right, nil
 }
 
-func (tf *CoreTransformer) transformIfExpression(expect vintage.VCLType, expr *ast.IfExpression) (*expressionValue, error) {
+func (tf *CoreTransformer) transformIfExpression(expect vintage.VCLType, expr *ast.IfExpression) (*ExpressionValue, error) {
 	condition, err := tf.transformExpression(vintage.BOOL, expr.Condition)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -146,7 +154,7 @@ func (tf *CoreTransformer) transformIfExpression(expect vintage.VCLType, expr *a
 		return nil, errors.WithStack(err)
 	}
 
-	v := tf.prepVar()
+	v := tmpVar()
 	preps := prepareCodes(
 		condition.Prepare,
 		consequence.Prepare,
@@ -156,10 +164,10 @@ func (tf *CoreTransformer) transformIfExpression(expect vintage.VCLType, expr *a
 		fmt.Sprintf(consequence.Code),
 		"}",
 	)
-	return newExpressionValue(expect, v, Prepare(preps)), nil
+	return NewExpressionValue(expect, v, Prepare(preps)), nil
 }
 
-func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (*expressionValue, error) {
+func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (*ExpressionValue, error) {
 	switch expr.Operator {
 	case "==", "!=", ">", "<", ">=", "<=":
 		left, err := tf.transformExpression(vintage.NULL, expr.Left)
@@ -171,7 +179,7 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 			return nil, errors.WithStack(err)
 		}
 
-		return newExpressionValue(
+		return NewExpressionValue(
 			vintage.BOOL,
 			fmt.Sprintf("%s %s %s", left.Code, expr.Operator, right.Code),
 			Prepare(prepareCodes(left.Prepare, right.Prepare)),
@@ -193,7 +201,7 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 			if expr.Operator == "!~" {
 				inverse = "!"
 			}
-			return newExpressionValue(
+			return NewExpressionValue(
 				vintage.BOOL,
 				fmt.Sprintf("%s%s.Match(%s)", inverse, right.Code, left.Code),
 				Prepare(prepareCodes(left.Prepare, right.Prepare)),
@@ -202,7 +210,7 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 
 		// Otherwise, string matching, import regexp package
 		tf.Packages.Add("regexp", "")
-		v := tf.prepVar()
+		v := tmpVar()
 		preps := prepareCodes(
 			left.Prepare,
 			right.Prepare,
@@ -211,7 +219,7 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 			"return vintage.NONE, err",
 			"}",
 		)
-		return newExpressionValue(vintage.BOOL, v, Prepare(preps)), nil
+		return NewExpressionValue(vintage.BOOL, v, Prepare(preps)), nil
 
 	case "||", "&&":
 		left, err := tf.transformExpression(vintage.BOOL, expr.Left)
@@ -222,7 +230,7 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		return newExpressionValue(
+		return NewExpressionValue(
 			vintage.BOOL,
 			fmt.Sprintf("%s %s %s", left.Code, expr.Operator, right.Code),
 			Prepare(prepareCodes(left.Prepare, right.Prepare)),
@@ -238,7 +246,7 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		return newExpressionValue(
+		return NewExpressionValue(
 			vintage.BOOL,
 			fmt.Sprintf("%s + %s", left.Code, right.Code),
 			Prepare(prepareCodes(left.Prepare, right.Prepare)),
@@ -250,7 +258,7 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 func (tf *CoreTransformer) transformFunctionCallExpression(
 	expect vintage.VCLType,
 	expr *ast.FunctionCallExpression,
-) (*expressionValue, error) {
+) (*ExpressionValue, error) {
 
 	tf.Packages.Add("github.com/ysugimoto/vintage/builtin", "")
 
@@ -259,5 +267,5 @@ func (tf *CoreTransformer) transformFunctionCallExpression(
 		"vintage.%s()",
 		ucFirst(strings.ReplaceAll(expr.Function.Value, ".", "_")),
 	)
-	return newExpressionValue(expect, call), nil
+	return NewExpressionValue(expect, call), nil
 }

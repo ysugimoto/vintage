@@ -1,4 +1,4 @@
-package vintage
+package core
 
 import (
 	"fmt"

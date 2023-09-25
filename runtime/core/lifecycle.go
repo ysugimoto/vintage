@@ -1,4 +1,4 @@
-package vintage
+package core
 
 import (
 	"context"
@@ -20,7 +20,7 @@ const (
 )
 
 // Lifecycle starts from RECV directive.
-func (c *Context[T]) Lifecycle(ctx context.Context, r T) error {
+func (c *Runtime[T]) Lifecycle(ctx context.Context, r T) error {
 	var state State = PASS
 	var err error
 
@@ -56,7 +56,7 @@ func (c *Context[T]) Lifecycle(ctx context.Context, r T) error {
 	return nil
 }
 
-func (c *Context[T]) lifecycleRestart(ctx context.Context, r T) error {
+func (c *Runtime[T]) lifecycleRestart(ctx context.Context, r T) error {
 	c.Restarts++
 	if c.Restarts > 3 {
 		return errors.WithStack(
@@ -66,7 +66,7 @@ func (c *Context[T]) lifecycleRestart(ctx context.Context, r T) error {
 	return c.Lifecycle(ctx, r)
 }
 
-func (c *Context[T]) lifecycleHash(ctx context.Context, r T) error {
+func (c *Runtime[T]) lifecycleHash(ctx context.Context, r T) error {
 	if vclHash, ok := c.Subroutines[fastlySubroutineHash]; ok {
 		if _, err := vclHash(r); err != nil {
 			return errors.WithStack(err)
@@ -75,9 +75,11 @@ func (c *Context[T]) lifecycleHash(ctx context.Context, r T) error {
 	return nil
 }
 
-func (c *Context[T]) lifecycleMiss(ctx context.Context, r T) error {
+func (c *Runtime[T]) lifecycleMiss(ctx context.Context, r T) error {
 	var state State = FETCH
 	var err error
+
+	r.CreateBackendRequest()
 
 	if miss, ok := c.Subroutines[fastlySubroutineMiss]; ok {
 		state, err = miss(r)
@@ -104,14 +106,16 @@ func (c *Context[T]) lifecycleMiss(ctx context.Context, r T) error {
 	return nil
 }
 
-func (c *Context[T]) lifecycleHit(ctx context.Context, r T) error {
+func (c *Runtime[T]) lifecycleHit(ctx context.Context, r T) error {
 	// TODO: nothing to do because Edge runtime does have caching behavior on its runtime
 	return nil
 }
 
-func (c *Context[T]) lifecyclePass(ctx context.Context, r T) error {
+func (c *Runtime[T]) lifecyclePass(ctx context.Context, r T) error {
 	var state State = FETCH
 	var err error
+
+	r.CreateBackendRequest()
 
 	if vclPass, ok := c.Subroutines[fastlySubroutinePass]; ok {
 		state, err = vclPass(r)
@@ -134,15 +138,13 @@ func (c *Context[T]) lifecyclePass(ctx context.Context, r T) error {
 	return nil
 }
 
-func (c *Context[T]) lifecycleFetch(ctx context.Context, r T) error {
+func (c *Runtime[T]) lifecycleFetch(ctx context.Context, r T) error {
 	var state State = DELIVER
 	var err error
 
 	if err = r.Proxy(ctx, c.Backend); err != nil {
 		return errors.WithStack(err)
 	}
-
-	c.RequestEndTime = time.Now()
 
 	if vclFetch, ok := c.Subroutines[fastlySubroutineFetch]; ok {
 		state, err = vclFetch(r)
@@ -164,10 +166,15 @@ func (c *Context[T]) lifecycleFetch(ctx context.Context, r T) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
+	if err = r.CreateClientResponse(); err != nil {
+		return errors.WithStack(err)
+	}
+
 	return nil
 }
 
-func (c *Context[T]) lifecycleError(ctx context.Context, r T) error {
+func (c *Runtime[T]) lifecycleError(ctx context.Context, r T) error {
 	var state State = DELIVER
 	var err error
 
@@ -192,9 +199,12 @@ func (c *Context[T]) lifecycleError(ctx context.Context, r T) error {
 	return nil
 }
 
-func (c *Context[T]) lifecycleDeliver(ctx context.Context, r T) error {
+func (c *Runtime[T]) lifecycleDeliver(ctx context.Context, r T) error {
 	var state State = LOG
 	var err error
+
+	c.TimeToFirstByte = time.Since(c.RequestStartTime)
+	c.RequestEndTime = time.Now()
 
 	if vclDeliver, ok := c.Subroutines[fastlySubroutineDeliver]; ok {
 		state, err = vclDeliver(r)
@@ -217,7 +227,7 @@ func (c *Context[T]) lifecycleDeliver(ctx context.Context, r T) error {
 	return nil
 }
 
-func (c *Context[T]) lifecycleLog(ctx context.Context, r T) error {
+func (c *Runtime[T]) lifecycleLog(ctx context.Context, r T) error {
 	if vclLog, ok := c.Subroutines[fastlySubroutineLog]; ok {
 		if _, err := vclLog(r); err != nil {
 			return errors.WithStack(err)

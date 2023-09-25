@@ -6,9 +6,10 @@ import (
 )
 
 type Director struct {
-	Type       DirectorType
-	Properties map[string]any
-	Backends   []map[string]any
+	Type              DirectorType
+	Properties        map[string]any
+	Backends          []map[string]any
+	determinedBackend string
 }
 
 type DirectorOption func(d *Director)
@@ -43,20 +44,24 @@ func NewDirector(name string, dType DirectorType, opts ...DirectorOption) *Backe
 }
 
 func (d *Director) Backend() string {
-	switch d.Type {
-	case Random:
-		return d.random()
-	case Fallback:
-		return d.fallback()
-	case Hash:
-		return d.hash()
-	case Client:
-		return d.client()
-	case CHash:
-		return d.chash()
-	default:
-		return ""
+	if d.determinedBackend == "" {
+		var backend string
+		switch d.Type {
+		case Random:
+			backend = d.random()
+		case Fallback:
+			backend = d.fallback()
+		case Hash:
+			backend = d.hash()
+		case Client:
+			backend = d.client()
+		case CHash:
+			backend = d.chash()
+		}
+
+		d.determinedBackend = backend
 	}
+	return d.determinedBackend
 }
 
 // Elect backend by random.

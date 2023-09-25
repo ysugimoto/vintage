@@ -15,7 +15,7 @@ func (tf *CoreTransformer) transformAcl(acl *ast.AclDeclaration) ([]byte, error)
 	var buf bytes.Buffer
 
 	name := acl.Name.String()
-	tf.acls[name] = newExpressionValue(vintage.ACL, "acl__"+name)
+	tf.acls[name] = NewExpressionValue(vintage.ACL, "acl__"+name)
 
 	buf.WriteString(
 		fmt.Sprintf(`var acl__%s = vintage.NewAcl("%s",`+lineFeed, name, name),
@@ -45,7 +45,7 @@ func (tf *CoreTransformer) transformBackend(backend *ast.BackendDeclaration) ([]
 	name := backend.Name.String()
 	// We will use first found backend as default
 	isDefault := len(tf.backends) == 0
-	tf.backends[name] = newExpressionValue(vintage.BACKEND, "backend__"+name)
+	tf.backends[name] = NewExpressionValue(vintage.BACKEND, "backend__"+name)
 
 	buf.WriteString(
 		fmt.Sprintf(`var backend__%s = vintage.NewBackend("%s", %t)`+lineFeed, name, name, isDefault),
@@ -58,7 +58,7 @@ func (tf *CoreTransformer) transformDirector(director *ast.DirectorDeclaration) 
 	var buf bytes.Buffer
 
 	name := director.Name.String()
-	tf.backends[name] = newExpressionValue(vintage.BACKEND, "director__"+name)
+	tf.backends[name] = NewExpressionValue(vintage.BACKEND, "director__"+name)
 
 	buf.WriteString(
 		fmt.Sprintf(
@@ -92,7 +92,7 @@ func (tf *CoreTransformer) transformTable(table *ast.TableDeclaration) ([]byte, 
 	var buf bytes.Buffer
 
 	name := table.Name.String()
-	tf.tables[name] = newExpressionValue(vintage.IDENT, "table__"+name)
+	tf.tables[name] = NewExpressionValue(vintage.IDENT, "table__"+name)
 
 	tableType := "STRING"
 	if table.ValueType != nil {
@@ -119,7 +119,7 @@ func (tf *CoreTransformer) transformSubroutine(sub *ast.SubroutineDeclaration) (
 
 	name := sub.Name.String()
 	if sub.ReturnType != nil {
-		tf.functionSubroutines[name] = newExpressionValue(vintage.IDENT, name)
+		tf.functionSubroutines[name] = NewExpressionValue(vintage.IDENT, name)
 		buf.WriteString(fmt.Sprintf(
 			"func %s(ctx *fastly.Runtime) (%s, error) {"+lineFeed,
 			name,
@@ -134,7 +134,7 @@ func (tf *CoreTransformer) transformSubroutine(sub *ast.SubroutineDeclaration) (
 		return buf.Bytes(), nil
 	}
 
-	tf.subroutines[name] = newExpressionValue(vintage.IDENT, name)
+	tf.subroutines[name] = NewExpressionValue(vintage.IDENT, name)
 
 	buf.WriteString(
 		fmt.Sprintf("func %s(ctx *fastly.Runtime) (vintage.State, error) {"+lineFeed, name),

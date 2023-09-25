@@ -9,3 +9,9 @@ func WithSnippets(snip *context.FastlySnippet) Option {
 		t.snippets = snip
 	}
 }
+
+func WithVariables(v Variable) Option {
+	return func(t *CoreTransformer) {
+		t.variables = v
+	}
+}

@@ -46,31 +46,31 @@ func (tf *CoreTransformer) transformDeclareStatement(stmt *ast.DeclareStatement)
 	switch vintage.VCLType(stmt.ValueType.Value) {
 	case vintage.STRING:
 		buf.WriteString(fmt.Sprintf("var local__%s string", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.STRING, "local__ "+name)
+		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.STRING, "local__ "+name)
 	case vintage.INTEGER:
 		buf.WriteString(fmt.Sprintf("var local__%s int64", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.INTEGER, "local__"+name)
+		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.INTEGER, "local__"+name)
 	case vintage.BOOL:
 		buf.WriteString(fmt.Sprintf("var local__%s bool", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.BOOL, "local__"+name)
+		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.BOOL, "local__"+name)
 	case vintage.FLOAT:
 		buf.WriteString(fmt.Sprintf("var local__%s float64", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.FLOAT, "local__"+name)
+		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.FLOAT, "local__"+name)
 	case vintage.BACKEND:
 		buf.WriteString(fmt.Sprintf("var local__%s *vintage.Backend", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.BACKEND, "local__"+name)
+		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.BACKEND, "local__"+name)
 	case vintage.IP:
 		buf.WriteString(fmt.Sprintf("var local__%s net.IP", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.IP, "local__"+name)
+		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.IP, "local__"+name)
 	case vintage.RTIME:
 		buf.WriteString(fmt.Sprintf("var local__%s time.Duration", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.RTIME, "local__"+name)
+		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.RTIME, "local__"+name)
 	case vintage.TIME:
 		buf.WriteString(fmt.Sprintf("var local__%s time.Time", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.TIME, "local__"+name)
+		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.TIME, "local__"+name)
 	case vintage.ACL:
 		buf.WriteString(fmt.Sprintf("var local__%s *vintage.Acl", name))
-		tf.vars[stmt.Name.Value] = newExpressionValue(vintage.ACL, "local__"+name)
+		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.ACL, "local__"+name)
 	default:
 		return nil, errors.WithStack(
 			fmt.Errorf("Unexpected variable type declared: %s", stmt.ValueType.Value),
@@ -101,35 +101,35 @@ func (tf *CoreTransformer) transformSetStatement(stmt *ast.SetStatement) ([]byte
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		buf.WriteString(val.Prepare + v.Code + " = " + val.Code)
-	case strings.HasPrefix(name, "req.http."),
-		strings.HasPrefix(name, "bereq.http."):
-		name := strings.TrimPrefix(
-			strings.TrimPrefix(name, "bereq.http."),
-			"req.http.",
-		)
-		val, err := tf.transformExpression(vintage.STRING, stmt.Value)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		buf.WriteString(val.Prepare + fmt.Sprintf(`ctx.RequestHeader.Set("%s", %s)`, name, val.Code))
-	case strings.HasPrefix(name, "beresp.http."),
-		strings.HasPrefix(name, "resp.http."),
-		strings.HasPrefix(name, "obj.http."):
-		name := strings.TrimPrefix(
-			strings.TrimPrefix(
-				strings.TrimPrefix(name, "obj.http."),
-				"resp.http.",
-			),
-			"beresp.http.",
-		)
-		val, err := tf.transformExpression(vintage.STRING, stmt.Value)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		buf.WriteString(val.Prepare + fmt.Sprintf(`ctx.ResponseHeader.Set("%s", %s)`, name, val.Code))
-	default:
-		break
+		buf.WriteString(val.Prepare + v.Code + " = " + val.Code + val.Comment)
+		// case strings.HasPrefix(name, "req.http."):
+		// 	strings.HasPrefix(name, "bereq.http."):
+		// 	name := strings.TrimPrefix(
+		// 		strings.TrimPrefix(name, "bereq.http."),
+		// 		"req.http.",
+		// 	)
+		// 	val, err := tf.transformExpression(vintage.STRING, stmt.Value)
+		// 	if err != nil {
+		// 		return nil, errors.WithStack(err)
+		// 	}
+		// 	buf.WriteString(val.Prepare + fmt.Sprintf(`ctx.RequestHeader.Set("%s", %s)%s`, name, val.Code, val.Comment))
+		// case strings.HasPrefix(name, "beresp.http."),
+		// 	strings.HasPrefix(name, "resp.http."),
+		// 	strings.HasPrefix(name, "obj.http."):
+		// 	name := strings.TrimPrefix(
+		// 		strings.TrimPrefix(
+		// 			strings.TrimPrefix(name, "obj.http."),
+		// 			"resp.http.",
+		// 		),
+		// 		"beresp.http.",
+		// 	)
+		// 	val, err := tf.transformExpression(vintage.STRING, stmt.Value)
+		// 	if err != nil {
+		// 		return nil, errors.WithStack(err)
+		// 	}
+		// 	buf.WriteString(val.Prepare + fmt.Sprintf(`ctx.ResponseHeader.Set("%s", %s)`, name, val.Code))
+		// default:
+		// 	break
 		// format, expectType, err := variables.GetType(name)
 		// if err != nil {
 		// 	return nil, errors.WithStack(err)

@@ -14,25 +14,25 @@ import (
 
 type CoreTransformer struct {
 	snippets            *context.FastlySnippet
-	acls                map[string]*expressionValue
-	backends            map[string]*expressionValue
-	tables              map[string]*expressionValue
-	subroutines         map[string]*expressionValue
-	functionSubroutines map[string]*expressionValue
+	acls                map[string]*ExpressionValue
+	backends            map[string]*ExpressionValue
+	tables              map[string]*ExpressionValue
+	subroutines         map[string]*ExpressionValue
+	functionSubroutines map[string]*ExpressionValue
 	Packages            Packages
 
-	vars      map[string]*expressionValue
-	prepOrder int
+	vars      map[string]*ExpressionValue
+	variables Variable
 }
 
 func NewCoreTransfromer(opts ...Option) *CoreTransformer {
 	t := &CoreTransformer{
-		acls:                make(map[string]*expressionValue),
-		backends:            make(map[string]*expressionValue),
-		tables:              make(map[string]*expressionValue),
-		vars:                make(map[string]*expressionValue),
-		subroutines:         make(map[string]*expressionValue),
-		functionSubroutines: make(map[string]*expressionValue),
+		acls:                make(map[string]*ExpressionValue),
+		backends:            make(map[string]*ExpressionValue),
+		tables:              make(map[string]*ExpressionValue),
+		vars:                make(map[string]*ExpressionValue),
+		subroutines:         make(map[string]*ExpressionValue),
+		functionSubroutines: make(map[string]*ExpressionValue),
 		Packages: Packages{
 			"github.com/ysugimoto/vintage": {},
 		},
@@ -97,7 +97,7 @@ func (tf *CoreTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 			code, err = tf.transformTable(s)
 		case *ast.SubroutineDeclaration:
 			// Reset local variables for each subroutines
-			tf.vars = make(map[string]*expressionValue)
+			tf.vars = make(map[string]*ExpressionValue)
 			code, err = tf.transformSubroutine(s)
 		// Currently we don't support penaltybox and ratecounter
 		// case *ast.PenaltyboxDeclaration:

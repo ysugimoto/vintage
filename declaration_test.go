@@ -9,7 +9,7 @@ import (
 )
 
 func TestBackendDeclaration(t *testing.T) {
-	b := NewBackend("F_example")
+	b := NewBackend("F_example", true)
 	if diff := cmp.Diff(b.Backend(), "F_example"); diff != "" {
 		t.Errorf("Value unmatch, diff=%s", diff)
 	}

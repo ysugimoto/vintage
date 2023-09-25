@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const httpTime = "Mon, 02 Jan 2006 15:04:05 GMT"
+
 func ToString[T Primitive](v T) string {
 	switch t := any(v).(type) {
 	case string:

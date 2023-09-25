@@ -2,35 +2,50 @@ package transformer
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ysugimoto/vintage"
 )
 
-type ValueOption func(e *expressionValue)
+type ValueOption func(e *ExpressionValue)
 
-func Prepare(code string) ValueOption {
-	return func(e *expressionValue) {
-		e.Prepare = code + lineFeed
+func Prepare(preps ...string) ValueOption {
+	return func(e *ExpressionValue) {
+		var codes []string
+		for i := range preps {
+			if preps[i] == "" {
+				continue
+			}
+			codes = append(codes, preps[i])
+		}
+		e.Prepare = strings.Join(codes, lineFeed) + lineFeed
 	}
 }
 
 func Dependency(pkg, alias string) ValueOption {
-	return func(e *expressionValue) {
+	return func(e *ExpressionValue) {
 		e.Dependencies = Packages{
 			pkg: {alias},
 		}
 	}
 }
 
-type expressionValue struct {
+func Comment(c string) ValueOption {
+	return func(e *ExpressionValue) {
+		e.Comment = " /* " + c + " */ "
+	}
+}
+
+type ExpressionValue struct {
 	Type         vintage.VCLType
 	Code         string
 	Prepare      string
 	Dependencies Packages
+	Comment      string
 }
 
-func ExpressionValue(t vintage.VCLType, code string, preps ...ValueOption) *expressionValue {
-	v := &expressionValue{
+func NewExpressionValue(t vintage.VCLType, code string, preps ...ValueOption) *ExpressionValue {
+	v := &ExpressionValue{
 		Type: t,
 		Code: code,
 	}
@@ -40,7 +55,7 @@ func ExpressionValue(t vintage.VCLType, code string, preps ...ValueOption) *expr
 	return v
 }
 
-func (v *expressionValue) Conversion(expect vintage.VCLType) *expressionValue {
+func (v *ExpressionValue) Conversion(expect vintage.VCLType) *ExpressionValue {
 	if expect == vintage.NULL {
 		return v
 	}
@@ -55,7 +70,7 @@ func (v *expressionValue) Conversion(expect vintage.VCLType) *expressionValue {
 	return v
 }
 
-func (v *expressionValue) stringConversion() *expressionValue {
+func (v *ExpressionValue) stringConversion() *ExpressionValue {
 	if v.Type == vintage.STRING {
 		return v
 	}
@@ -65,7 +80,7 @@ func (v *expressionValue) stringConversion() *expressionValue {
 	return v
 }
 
-func (v *expressionValue) boolConversion() *expressionValue {
+func (v *ExpressionValue) boolConversion() *ExpressionValue {
 	if v.Type == vintage.BOOL {
 		return v
 	}

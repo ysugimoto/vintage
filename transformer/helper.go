@@ -51,7 +51,7 @@ func ucFirst(str string) string {
 	return string(b)
 }
 
-func prepareCodes(preps ...string) string {
+func PrepareCodes(preps ...string) string {
 	var code []string
 	for i := range preps {
 		if preps[i] == "" {
@@ -64,7 +64,7 @@ func prepareCodes(preps ...string) string {
 
 var tmpVarCounter uint
 
-func tmpVar() string {
+func Temporary() string {
 	tmpVarCounter++
 	return fmt.Sprintf("tmp_%d", tmpVarCounter)
 }
