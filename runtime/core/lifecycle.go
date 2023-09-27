@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/ysugimoto/vintage"
 )
 
 const (
@@ -21,7 +22,7 @@ const (
 
 // Lifecycle starts from RECV directive.
 func (c *Runtime[T]) Lifecycle(ctx context.Context, r T) error {
-	var state State = PASS
+	var state vintage.State = vintage.PASS
 	var err error
 
 	if vclRecv, ok := c.Subroutines[fastlySubroutineRecv]; ok {
@@ -31,16 +32,16 @@ func (c *Runtime[T]) Lifecycle(ctx context.Context, r T) error {
 		}
 	}
 	switch state {
-	case PASS:
+	case vintage.PASS:
 		if err = c.lifecycleHash(ctx, r); err != nil {
 			return errors.WithStack(err)
 		}
 		err = c.lifecyclePass(ctx, r)
-	case ERROR:
+	case vintage.ERROR:
 		err = c.lifecycleError(ctx, r)
-	case RESTART:
+	case vintage.RESTART:
 		err = c.lifecycleRestart(ctx, r)
-	case LOOKUP, NONE:
+	case vintage.LOOKUP, vintage.NONE:
 		if err = c.lifecycleHash(ctx, r); err != nil {
 			return errors.WithStack(err)
 		}
@@ -76,7 +77,7 @@ func (c *Runtime[T]) lifecycleHash(ctx context.Context, r T) error {
 }
 
 func (c *Runtime[T]) lifecycleMiss(ctx context.Context, r T) error {
-	var state State = FETCH
+	var state vintage.State = vintage.FETCH
 	var err error
 
 	r.CreateBackendRequest()
@@ -89,13 +90,13 @@ func (c *Runtime[T]) lifecycleMiss(ctx context.Context, r T) error {
 	}
 
 	switch state {
-	case DELIVER_STALE:
+	case vintage.DELIVER_STALE:
 		err = c.lifecycleDeliver(ctx, r)
-	case PASS:
+	case vintage.PASS:
 		err = c.lifecyclePass(ctx, r)
-	case ERROR:
+	case vintage.ERROR:
 		err = c.lifecycleError(ctx, r)
-	case FETCH, NONE:
+	case vintage.FETCH, vintage.NONE:
 		err = c.lifecycleFetch(ctx, r)
 	default:
 		err = fmt.Errorf("Unexpected state returned: %s", state)
@@ -112,7 +113,7 @@ func (c *Runtime[T]) lifecycleHit(ctx context.Context, r T) error {
 }
 
 func (c *Runtime[T]) lifecyclePass(ctx context.Context, r T) error {
-	var state State = FETCH
+	var state vintage.State = vintage.FETCH
 	var err error
 
 	r.CreateBackendRequest()
@@ -125,9 +126,9 @@ func (c *Runtime[T]) lifecyclePass(ctx context.Context, r T) error {
 	}
 
 	switch state {
-	case PASS, NONE:
+	case vintage.PASS, vintage.NONE:
 		err = c.lifecycleFetch(ctx, r)
-	case ERROR:
+	case vintage.ERROR:
 		err = c.lifecycleError(ctx, r)
 	default:
 		err = fmt.Errorf("Unexpected state returned: %s", state)
@@ -139,7 +140,7 @@ func (c *Runtime[T]) lifecyclePass(ctx context.Context, r T) error {
 }
 
 func (c *Runtime[T]) lifecycleFetch(ctx context.Context, r T) error {
-	var state State = DELIVER
+	var state vintage.State = vintage.DELIVER
 	var err error
 
 	if err = r.Proxy(ctx, c.Backend); err != nil {
@@ -154,11 +155,11 @@ func (c *Runtime[T]) lifecycleFetch(ctx context.Context, r T) error {
 	}
 
 	switch state {
-	case DELIVER, DELIVER_STALE, NONE:
+	case vintage.DELIVER, vintage.DELIVER_STALE, vintage.NONE:
 		err = c.lifecycleDeliver(ctx, r)
-	case ERROR:
+	case vintage.ERROR:
 		err = c.lifecycleError(ctx, r)
-	case RESTART:
+	case vintage.RESTART:
 		err = c.lifecycleRestart(ctx, r)
 	default:
 		err = fmt.Errorf("Unexpected state returned: %s", state)
@@ -175,7 +176,7 @@ func (c *Runtime[T]) lifecycleFetch(ctx context.Context, r T) error {
 }
 
 func (c *Runtime[T]) lifecycleError(ctx context.Context, r T) error {
-	var state State = DELIVER
+	var state vintage.State = vintage.DELIVER
 	var err error
 
 	if vclError, ok := c.Subroutines[fastlySubroutineError]; ok {
@@ -186,9 +187,9 @@ func (c *Runtime[T]) lifecycleError(ctx context.Context, r T) error {
 	}
 
 	switch state {
-	case DELIVER, NONE:
+	case vintage.DELIVER, vintage.NONE:
 		err = c.lifecycleDeliver(ctx, r)
-	case RESTART:
+	case vintage.RESTART:
 		err = c.lifecycleRestart(ctx, r)
 	default:
 		err = fmt.Errorf("Unexpected state returned: %s", state)
@@ -200,9 +201,11 @@ func (c *Runtime[T]) lifecycleError(ctx context.Context, r T) error {
 }
 
 func (c *Runtime[T]) lifecycleDeliver(ctx context.Context, r T) error {
-	var state State = LOG
+	var state vintage.State = vintage.LOG
 	var err error
 
+	// Time to first bytes is calculates from restart has started to vcl_deliver will call.
+	// https://developer.fastly.com/reference/vcl/variables/client-response/time-to-first-byte/
 	c.TimeToFirstByte = time.Since(c.RequestStartTime)
 	c.RequestEndTime = time.Now()
 
@@ -214,9 +217,9 @@ func (c *Runtime[T]) lifecycleDeliver(ctx context.Context, r T) error {
 	}
 
 	switch state {
-	case RESTART:
+	case vintage.RESTART:
 		err = c.lifecycleRestart(ctx, r)
-	case LOG, DELIVER, NONE:
+	case vintage.LOG, vintage.DELIVER, vintage.NONE:
 		err = c.lifecycleLog(ctx, r)
 	default:
 		err = fmt.Errorf("Unexpected state returned: %s", state)
@@ -228,6 +231,13 @@ func (c *Runtime[T]) lifecycleDeliver(ctx context.Context, r T) error {
 }
 
 func (c *Runtime[T]) lifecycleLog(ctx context.Context, r T) error {
+
+	var err error
+	c.ResponseHeaderBytesWritten, c.ResponseBodyBytesWritten, c.ResponseBytesWritten, err = r.WriteResponse()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
 	if vclLog, ok := c.Subroutines[fastlySubroutineLog]; ok {
 		if _, err := vclLog(r); err != nil {
 			return errors.WithStack(err)

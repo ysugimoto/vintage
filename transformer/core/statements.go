@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/ysugimoto/falco/ast"
-	"github.com/ysugimoto/vintage"
+	"github.com/ysugimoto/vintage/transformer/value"
 )
 
 func (tf *CoreTransformer) transformBlockStatement(statements []ast.Statement) ([]byte, bool, error) {
@@ -43,34 +43,34 @@ func (tf *CoreTransformer) transformDeclareStatement(stmt *ast.DeclareStatement)
 	var buf bytes.Buffer
 
 	name := strings.TrimPrefix(stmt.Name.Value, "var.")
-	switch vintage.VCLType(stmt.ValueType.Value) {
-	case vintage.STRING:
+	switch value.VCLType(stmt.ValueType.Value) {
+	case value.STRING:
 		buf.WriteString(fmt.Sprintf("var local__%s string", name))
-		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.STRING, "local__ "+name)
-	case vintage.INTEGER:
+		tf.vars[stmt.Name.Value] = value.NewValue(value.STRING, "local__ "+name)
+	case value.INTEGER:
 		buf.WriteString(fmt.Sprintf("var local__%s int64", name))
-		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.INTEGER, "local__"+name)
-	case vintage.BOOL:
+		tf.vars[stmt.Name.Value] = value.NewValue(value.INTEGER, "local__"+name)
+	case value.BOOL:
 		buf.WriteString(fmt.Sprintf("var local__%s bool", name))
-		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.BOOL, "local__"+name)
-	case vintage.FLOAT:
+		tf.vars[stmt.Name.Value] = value.NewValue(value.BOOL, "local__"+name)
+	case value.FLOAT:
 		buf.WriteString(fmt.Sprintf("var local__%s float64", name))
-		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.FLOAT, "local__"+name)
-	case vintage.BACKEND:
+		tf.vars[stmt.Name.Value] = value.NewValue(value.FLOAT, "local__"+name)
+	case value.BACKEND:
 		buf.WriteString(fmt.Sprintf("var local__%s *vintage.Backend", name))
-		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.BACKEND, "local__"+name)
-	case vintage.IP:
+		tf.vars[stmt.Name.Value] = value.NewValue(value.BACKEND, "local__"+name)
+	case value.IP:
 		buf.WriteString(fmt.Sprintf("var local__%s net.IP", name))
-		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.IP, "local__"+name)
-	case vintage.RTIME:
+		tf.vars[stmt.Name.Value] = value.NewValue(value.IP, "local__"+name)
+	case value.RTIME:
 		buf.WriteString(fmt.Sprintf("var local__%s time.Duration", name))
-		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.RTIME, "local__"+name)
-	case vintage.TIME:
+		tf.vars[stmt.Name.Value] = value.NewValue(value.RTIME, "local__"+name)
+	case value.TIME:
 		buf.WriteString(fmt.Sprintf("var local__%s time.Time", name))
-		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.TIME, "local__"+name)
-	case vintage.ACL:
+		tf.vars[stmt.Name.Value] = value.NewValue(value.TIME, "local__"+name)
+	case value.ACL:
 		buf.WriteString(fmt.Sprintf("var local__%s *vintage.Acl", name))
-		tf.vars[stmt.Name.Value] = NewExpressionValue(vintage.ACL, "local__"+name)
+		tf.vars[stmt.Name.Value] = value.NewValue(value.ACL, "local__"+name)
 	default:
 		return nil, errors.WithStack(
 			fmt.Errorf("Unexpected variable type declared: %s", stmt.ValueType.Value),
@@ -80,7 +80,7 @@ func (tf *CoreTransformer) transformDeclareStatement(stmt *ast.DeclareStatement)
 }
 
 func (tf *CoreTransformer) transformReturnStatement(stmt *ast.ReturnStatement) ([]byte, error) {
-	state := "vintage.NONE"
+	state := "vitnage.NONE"
 	if stmt.ReturnExpression != nil {
 		state = "vintage." + strings.ToUpper(strings.Trim(toString(*stmt.ReturnExpression), `"`))
 	}
@@ -108,7 +108,7 @@ func (tf *CoreTransformer) transformSetStatement(stmt *ast.SetStatement) ([]byte
 		// 		strings.TrimPrefix(name, "bereq.http."),
 		// 		"req.http.",
 		// 	)
-		// 	val, err := tf.transformExpression(vintage.STRING, stmt.Value)
+		// 	val, err := tf.transformExpression(value.STRING, stmt.Value)
 		// 	if err != nil {
 		// 		return nil, errors.WithStack(err)
 		// 	}
@@ -123,7 +123,7 @@ func (tf *CoreTransformer) transformSetStatement(stmt *ast.SetStatement) ([]byte
 		// 		),
 		// 		"beresp.http.",
 		// 	)
-		// 	val, err := tf.transformExpression(vintage.STRING, stmt.Value)
+		// 	val, err := tf.transformExpression(value.STRING, stmt.Value)
 		// 	if err != nil {
 		// 		return nil, errors.WithStack(err)
 		// 	}

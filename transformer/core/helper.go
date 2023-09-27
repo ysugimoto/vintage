@@ -19,6 +19,8 @@ func toString(expr ast.Expression) string {
 		return fmt.Sprint(t.Value)
 	case *ast.Float:
 		return fmt.Sprint(t.Value)
+	case *ast.Boolean:
+		return fmt.Sprintf("%t", t.Value)
 	case *ast.RTime:
 		switch {
 		case strings.HasSuffix(t.Value, "ms"):
@@ -60,11 +62,4 @@ func PrepareCodes(preps ...string) string {
 		code = append(code, preps[i])
 	}
 	return strings.Join(code, lineFeed)
-}
-
-var tmpVarCounter uint
-
-func Temporary() string {
-	tmpVarCounter++
-	return fmt.Sprintf("tmp_%d", tmpVarCounter)
 }

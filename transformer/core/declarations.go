@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/ysugimoto/falco/ast"
-	"github.com/ysugimoto/vintage"
+	"github.com/ysugimoto/vintage/transformer/value"
 )
 
 const lineFeed = "\n"
@@ -15,7 +15,7 @@ func (tf *CoreTransformer) transformAcl(acl *ast.AclDeclaration) ([]byte, error)
 	var buf bytes.Buffer
 
 	name := acl.Name.String()
-	tf.acls[name] = NewExpressionValue(vintage.ACL, "acl__"+name)
+	tf.acls[name] = value.NewValue(value.ACL, "acl__"+name)
 
 	buf.WriteString(
 		fmt.Sprintf(`var acl__%s = vintage.NewAcl("%s",`+lineFeed, name, name),
@@ -43,14 +43,36 @@ func (tf *CoreTransformer) transformBackend(backend *ast.BackendDeclaration) ([]
 	var buf bytes.Buffer
 
 	name := backend.Name.String()
-	// We will use first found backend as default
-	isDefault := len(tf.backends) == 0
-	tf.backends[name] = NewExpressionValue(vintage.BACKEND, "backend__"+name)
 
 	buf.WriteString(
-		fmt.Sprintf(`var backend__%s = vintage.NewBackend("%s", %t)`+lineFeed, name, name, isDefault),
+		fmt.Sprintf(`var backend__%s = vintage.NewBackend("%s",`+lineFeed, name, name),
 	)
+	// We will use first found backend as default
+	if len(tf.backends) == 0 {
+		buf.WriteString("vintage.BackendDefault()," + lineFeed)
+	}
+	for _, prop := range backend.Properties {
+		switch prop.Key.Value {
+		case "port":
+			buf.WriteString(fmt.Sprintf(`vintage.BackendPort(%s),`+lineFeed, toString(prop.Value)))
+		case "host":
+			buf.WriteString(fmt.Sprintf(`vintage.BackendHost(%s),`+lineFeed, toString(prop.Value)))
+		case "ssl":
+			buf.WriteString(fmt.Sprintf(`vintage.BackendSSL(%s),`+lineFeed, toString(prop.Value)))
+		case "connect_timeout":
+			tf.Packages.Add("time", "")
+			buf.WriteString(fmt.Sprintf(`vintage.BackendConnectTimeout(%s),`+lineFeed, toString(prop.Value)))
+		case "first_byte_timeout":
+			tf.Packages.Add("time", "")
+			buf.WriteString(fmt.Sprintf(`vintage.BackendFirstByteTimeout(%s),`+lineFeed, toString(prop.Value)))
+		case "between_bytes_timeout":
+			tf.Packages.Add("time", "")
+			buf.WriteString(fmt.Sprintf(`vintage.BackendBetweenBytesTimeout(%s),`+lineFeed, toString(prop.Value)))
+		}
+	}
+	buf.WriteString(")" + lineFeed)
 
+	tf.backends[name] = value.NewValue(value.BACKEND, "backend__"+name)
 	return buf.Bytes(), nil
 }
 
@@ -58,7 +80,7 @@ func (tf *CoreTransformer) transformDirector(director *ast.DirectorDeclaration) 
 	var buf bytes.Buffer
 
 	name := director.Name.String()
-	tf.backends[name] = NewExpressionValue(vintage.BACKEND, "director__"+name)
+	tf.backends[name] = value.NewValue(value.BACKEND, "director__"+name)
 
 	buf.WriteString(
 		fmt.Sprintf(
@@ -92,7 +114,7 @@ func (tf *CoreTransformer) transformTable(table *ast.TableDeclaration) ([]byte, 
 	var buf bytes.Buffer
 
 	name := table.Name.String()
-	tf.tables[name] = NewExpressionValue(vintage.IDENT, "table__"+name)
+	tf.tables[name] = value.NewValue(value.IDENT, "table__"+name)
 
 	tableType := "STRING"
 	if table.ValueType != nil {
@@ -119,11 +141,11 @@ func (tf *CoreTransformer) transformSubroutine(sub *ast.SubroutineDeclaration) (
 
 	name := sub.Name.String()
 	if sub.ReturnType != nil {
-		tf.functionSubroutines[name] = NewExpressionValue(vintage.IDENT, name)
+		tf.functionSubroutines[name] = value.NewValue(value.IDENT, name)
 		buf.WriteString(fmt.Sprintf(
 			"func %s(ctx *fastly.Runtime) (%s, error) {"+lineFeed,
 			name,
-			vintage.GoTypeString(vintage.VCLType(sub.ReturnType.Value)),
+			value.GoTypeString(value.VCLType(sub.ReturnType.Value)),
 		))
 		inside, _, err := tf.transformBlockStatement(sub.Block.Statements)
 		if err != nil {
@@ -134,7 +156,7 @@ func (tf *CoreTransformer) transformSubroutine(sub *ast.SubroutineDeclaration) (
 		return buf.Bytes(), nil
 	}
 
-	tf.subroutines[name] = NewExpressionValue(vintage.IDENT, name)
+	tf.subroutines[name] = value.NewValue(value.IDENT, name)
 
 	buf.WriteString(
 		fmt.Sprintf("func %s(ctx *fastly.Runtime) (vintage.State, error) {"+lineFeed, name),

@@ -74,13 +74,13 @@ func (r *Runtime) RequestDigest() string {
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(r.RequestHash)))
 }
 
-// Used for req.url
-func (r *Runtime) RequestURL() string {
-	u := r.Request.URL.Path
-	if v := r.Request.URL.RawQuery; v != "" {
+// Used for req.url and bereq.url
+func (r *Runtime) RequestURL(req *fsthttp.Request) string {
+	u := req.URL.Path
+	if v := req.URL.RawQuery; v != "" {
 		u += "?" + v
 	}
-	if v := r.Request.URL.RawFragment; v != "" {
+	if v := req.URL.RawFragment; v != "" {
 		u += "#" + v
 	}
 	return u
@@ -251,17 +251,18 @@ func (r *Runtime) RequestBytesRead() (int64, error) {
 	return size, nil
 }
 
-// Used for resp.response
-func (r *Runtime) ResponseBody() (string, error) {
-	if r.Response == nil {
+// Used for resp.response and beresp.response
+func (r *Runtime) ResponseBody(resp *fsthttp.Response) (string, error) {
+	if resp == nil {
 		return "", nil
 	}
 	var b bytes.Buffer
-	if _, err := b.ReadFrom(r.Response.Body); err != nil {
+	if _, err := b.ReadFrom(resp.Body); err != nil {
 		return "", errors.WithStack(
 			fmt.Errorf("Failed to read response body: %s", err),
 		)
 	}
-	r.Response.Body = io.NopCloser(bytes.NewReader(b.Bytes()))
+	// rewind
+	resp.Body = io.NopCloser(bytes.NewReader(b.Bytes()))
 	return b.String(), nil
 }

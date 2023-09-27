@@ -1,18 +1,33 @@
 package vintage
 
-import "net"
+import (
+	"net"
+	"time"
+)
 
 type Backend struct {
-	Name      string
-	IsDefault bool
-	Director  *Director
+	Name                string
+	IsDefault           bool
+	Port                string
+	Host                string
+	SSL                 bool
+	ConnectTimeout      time.Duration
+	FirstByteTimeout    time.Duration
+	BetweenBytesTimeout time.Duration
+	Director            *Director
 }
 
-func NewBackend(name string, isDefault bool) *Backend {
-	return &Backend{
-		Name:      name,
-		IsDefault: isDefault,
+func NewBackend(name string, opts ...BackendOption) *Backend {
+	b := &Backend{
+		Name:                name,
+		ConnectTimeout:      time.Second,
+		FirstByteTimeout:    15 * time.Second,
+		BetweenBytesTimeout: 10 * time.Second,
 	}
+	for i := range opts {
+		opts[i](b)
+	}
+	return b
 }
 
 func (b *Backend) Backend() string {
@@ -20,6 +35,50 @@ func (b *Backend) Backend() string {
 		return b.Director.Backend()
 	}
 	return b.Name
+}
+
+type BackendOption func(b *Backend)
+
+func BackendDefault() BackendOption {
+	return func(b *Backend) {
+		b.IsDefault = true
+	}
+}
+
+func BackendPort(port string) BackendOption {
+	return func(b *Backend) {
+		b.Port = port
+	}
+}
+
+func BackendHost(host string) BackendOption {
+	return func(b *Backend) {
+		b.Host = host
+	}
+}
+
+func BackendSSL(ssl bool) BackendOption {
+	return func(b *Backend) {
+		b.SSL = ssl
+	}
+}
+
+func BackendConnectTimeout(t time.Duration) BackendOption {
+	return func(b *Backend) {
+		b.ConnectTimeout = t
+	}
+}
+
+func BackendFirstByteTimeout(t time.Duration) BackendOption {
+	return func(b *Backend) {
+		b.FirstByteTimeout = t
+	}
+}
+
+func BackendBetweenBytesTimeout(t time.Duration) BackendOption {
+	return func(b *Backend) {
+		b.BetweenBytesTimeout = t
+	}
 }
 
 type Acl struct {

@@ -42,7 +42,11 @@ sub vcl_recv {
   // set var.Default= 100;
   set req.backend = example_com;
   set req.http.Foo = {" foo bar baz "};
-  call custom_logger;
+  if (req.http.Foo == "foo") {
+    call custom_logger;
+  } else {
+    set req.http.Bar = "bar";
+  }
   return (pass);
 }
 

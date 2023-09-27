@@ -79,7 +79,10 @@ backend example {
 		return
 	}
 	expect := `
-var backend__example = vintage.NewBackend("example", true)
+var backend__example = vintage.NewBackend("example",
+	vintage.BackendDefault(),
+	vintage.BackendHost("example.com"),
+)
 `
 	if diff := cmp.Diff("\n"+string(code), expect); diff != "" {
 		t.Errorf("Backend transform result mismatch, diff=%s", diff)

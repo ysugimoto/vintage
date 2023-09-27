@@ -36,6 +36,7 @@ func (tf *FastlyTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 	var out bytes.Buffer
 	vars := tf.CoreTransformer.TemplateVariables()
 	vars["Declarations"] = string(buf)
+	fmt.Println(vars["Packages"])
 	if err := tmpl.Execute(&out, vars); err != nil {
 		return nil, errors.WithStack(err)
 	}
