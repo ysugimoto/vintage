@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/ysugimoto/vintage/transformer/value"
 	v "github.com/ysugimoto/vintage/transformer/variable"
 )
@@ -20,8 +21,12 @@ func NewCoreVariables() *CoreVariable {
 func (cv *CoreVariable) Get(name string) (*value.Value, error) {
 	switch name {
 
+	case v.LF:
+		return value.NewValue(value.STRING, "\n"), nil
+
+	// @Tentative
 	case v.BEREQ_IS_CLUSTERING:
-		return value.NewValue(value.BOOL, "false"), nil
+		return value.NewValue(value.BOOL, "false", value.Comment(name)), nil
 
 	case v.CLIENT_BOT_NAME:
 		return value.NewValue(value.STRING, "ctx.UserAgent.BotName()"), nil
@@ -43,6 +48,7 @@ func (cv *CoreVariable) Get(name string) (*value.Value, error) {
 		return value.NewValue(value.BOOL, "ctx.UserAgent.IsEReader()"), nil
 	case v.CLIENT_PLATFORM_GAMECONSOLE:
 		return value.NewValue(value.BOOL, "ctx.UserAgent.IsGameConsole()"), nil
+
 	// @Tentative
 	case v.CLIENT_PLATFORM_HWTYPE:
 		return value.NewValue(value.STRING, "", value.Comment(name)), nil
@@ -66,42 +72,50 @@ func (cv *CoreVariable) Get(name string) (*value.Value, error) {
 		v.CLIENT_PLATFORM_MEDIAPLAYER,
 		v.REQ_IS_BACKGROUND_FETCH,
 		v.REQ_IS_CLUSTERING,
-		v.REQ_IS_ESI_SUBREQ,
-		v.RESP_STALE,
-		v.RESP_STALE_IS_ERROR,
-		v.RESP_STALE_IS_REVALIDATING:
-		return value.NewValue(value.BOOL, "false"), nil
+		v.REQ_IS_ESI_SUBREQ:
+		return value.NewValue(value.BOOL, "false", value.Comment(name)), nil
+
+	case v.RESP_STALE:
+		return value.NewValue(value.BOOL, "ctx.ResponseStale"), nil
+	case v.RESP_STALE_IS_ERROR:
+		return value.NewValue(value.BOOL, "ctx.ResponseStaleIsError"), nil
+	case v.RESP_STALE_IS_REVALIDATING:
+		return value.NewValue(value.BOOL, "ctx.ResponseStaleIsRevalidating"), nil
 
 	// Edge does not check backend is healthy but value should be true
+	// @Tentative
 	case v.REQ_BACKEND_HEALTHY:
-		return value.NewValue(value.BOOL, "true"), nil
+		return value.NewValue(value.BOOL, "true", value.Comment(name)), nil
 
 	// Edge always works on the TLS
+	// @Tentative
 	case v.REQ_IS_SSL:
-		return value.NewValue(value.BOOL, "true"), nil
+		return value.NewValue(value.BOOL, "true", value.Comment(name)), nil
+	// @Tentative
 	case v.REQ_PROTOCOL:
-		return value.NewValue(value.STRING, "https"), nil
+		return value.NewValue(value.STRING, "https", value.Comment(name)), nil
 
 	// Client display infos are unknown. Always returns -1
 	// @Tentative
 	case v.CLIENT_DISPLAY_HEIGHT,
 		v.CLIENT_DISPLAY_PPI,
 		v.CLIENT_DISPLAY_WIDTH:
-		return value.NewValue(value.INTEGER, "-1"), nil
+		return value.NewValue(value.INTEGER, "-1", value.Comment(name)), nil
 
 	// Client could not fully identified so returns false
 	// @Tentative
 	case v.CLIENT_IDENTIFIED:
-		return value.NewValue(value.BOOL, "false"), nil
+		return value.NewValue(value.BOOL, "false", value.Comment(name)), nil
 
 	// Client requests always returns 1, means new connection is coming
 	// @Tentative
 	case v.CLIENT_REQUESTS:
-		return value.NewValue(value.INTEGER, "1"), nil
+		return value.NewValue(value.INTEGER, "1", value.Comment(name)), nil
 
 	// Returns tentative value -- you may know your customer_id in the contraction :-)
+	// @Tentative
 	case v.REQ_CUSTOMER_ID:
-		return value.NewValue(value.STRING, ""), nil
+		return value.NewValue(value.STRING, "", value.Comment(name)), nil
 
 	// Returns fixed value which is presented on Fastly fiddle
 	case v.REQ_RESTARTS:
@@ -110,14 +124,96 @@ func (cv *CoreVariable) Get(name string) (*value.Value, error) {
 	// Returns always 1 because VCL is generated locally
 	// @Tentative
 	case v.REQ_VCL_GENERATION:
-		return value.NewValue(value.INTEGER, "1"), nil
+		return value.NewValue(value.INTEGER, "1", value.Comment(name)), nil
+	// @Tentative
 	case v.REQ_VCL_VERSION:
-		return value.NewValue(value.INTEGER, "1"), nil
+		return value.NewValue(value.INTEGER, "1", value.Comment(name)), nil
+	// @Tentative
+	case v.REQ_BACKEND_IP:
+		return value.NewValue(value.IP, "vintage.LocalHost", value.Comment(name)), nil
+	// @Tentative
+	case v.REQ_BACKEND_IS_CLUSTER:
+		return value.NewValue(value.BOOL, "false", value.Comment(name)), nil
+	// @Tentative
+	case v.REQ_BACKEND_IS_SHIELD:
+		return value.NewValue(value.BOOL, "false", value.Comment(name)), nil
+	case v.REQ_HEADER_BYTES_READ:
+		return value.NewValue(value.INTEGER, "ctx.RequestHeaderBytes"), nil
+	case v.REQ_DIGEST:
+		return value.NewValue(value.STRING, "ctx.RequestDigest()"), nil
+
+	// @Tentative
+	case v.REQ_VCL:
+		return value.NewValue(value.STRING, "vintage.vcl.transpiled", value.Comment(name)), nil
+	// Precalculated: md5("vintage.vcl.transpiled")
+	// @Tentative
+	case v.REQ_VCL_MD5:
+		return value.NewValue(value.STRING, "1061a3ce2c356a8a5e5423a824eba490", value.Comment(name)), nil
+
+	case v.REQ_XID:
+		return value.NewValue(value.STRING, "vintage.GenerateXid()"), nil
+	case v.RESP_BODY_BYTES_WRITTEN:
+		return value.NewValue(value.INTEGER, "ctx.ResponseBodyBytesWritten"), nil
+	case v.RESP_BYTES_WRITTEN:
+		return value.NewValue(value.INTEGER, "ctx.ResponseBytesWritten"), nil
+	case v.RESP_HEADER_BYTES_WRITTEN:
+		return value.NewValue(value.INTEGER, "ctx.ResponseHeaderBytesWritten"), nil
+
+	case v.RESP_COMPLETED:
+		return value.NewValue(value.BOOL, "ctx.ResponseCompleted"), nil
+	case v.REQ_ENABLE_RANGE_ON_PASS:
+		return value.NewValue(value.BOOL, "ctx.EnableRangeOnPass"), nil
+	case v.REQ_ENABLE_SEGMENTED_CACHING:
+		return value.NewValue(value.BOOL, "ctx.EnableSegmentedCaching"), nil
+	case v.REQ_HASH:
+		return value.NewValue(value.STRING, "ctx.RequestHash"), nil
+	case v.REQ_HASH_ALWAYS_MISS:
+		return value.NewValue(value.BOOL, "ctx.HashAlwaysMiss"), nil
+	case v.REQ_HASH_IGNORE_BUSY:
+		return value.NewValue(value.BOOL, "ctx.HashIgnoreBusy"), nil
 
 	// Edge Runtime does not know backend and server IP info
 	// @Tentative
 	case v.BERESP_BACKEND_SRC_IP:
-		return value.NewValue(value.IP, "net.IPv4(127, 0, 0, 1)", value.Dependency("net", "")), nil
+		return value.NewValue(value.IP, "vintage.LocalHost)", value.Comment(name)), nil
+	// @Tentative
+	case v.BERESP_BACKEND_ALTERNATE_IPS:
+		return value.NewValue(value.STRING, "", value.Comment(name)), nil
+	// @Tentative
+	case v.BERESP_BACKEND_IP:
+		return value.NewValue(value.IP, "nil", value.Comment(name)), nil
+
+	// @Tentative
+	case v.BERESP_BACKEND_REQUESTS:
+		return value.NewValue(value.INTEGER, "1", value.Comment(name)), nil
+
+	case v.BERESP_BROTLI:
+		return value.NewValue(value.BOOL, "ctx.BackendResponseBrotli"), nil
+	case v.BERESP_CACHEABLE:
+		return value.NewValue(value.BOOL, "ctx.BackendResponseCacheable"), nil
+	case v.BERESP_DO_ESI:
+		return value.NewValue(value.BOOL, "ctx.BackendResponseDoESI"), nil
+	case v.BERESP_DO_STREAM:
+		return value.NewValue(value.BOOL, "ctx.BackendResponseDoStream"), nil
+	case v.BERESP_GRACE:
+		return value.NewValue(value.BOOL, "ctx.BackendResponseGrace"), nil
+	case v.BERESP_GZIP:
+		return value.NewValue(value.BOOL, "ctx.BackendResponseGzip"), nil
+	case v.BERESP_TTL:
+		return value.NewValue(value.RTIME, "ctx.BackendResponseTTL"), nil
+
+	// @Tentative
+	case v.BERESP_USED_ALTERNATE_PATH_TO_ORIGIN:
+		return value.NewValue(value.BOOL, "false", value.Comment(name)), nil
+
+	// @Tentative: Edge runtime could not know handshake related info
+	case v.BERESP_HANDSHAKE_TIME_TO_ORIGIN_MS:
+		return value.NewValue(value.INTEGER, "100", value.Comment(name)), nil
+
+	case v.BERESP_HIPAA:
+		return value.NewValue(value.BOOL, "ctx.BackendResponseHipaa"), nil
+	case v.BERESP_PCI:
+		return value.NewValue(value.BOOL, "ctx.BackendResponsePCI"), nil
 
 	// Core request related values
 	case v.REQ_BACKEND:
@@ -152,7 +248,7 @@ func (cv *CoreVariable) Get(name string) (*value.Value, error) {
 		return value.NewValue(value.STRING, "cubic", value.Comment(name)), nil
 	// @Tentative
 	case v.BACKEND_SOCKET_CWND:
-		return value.NewValue(value.INTEGER, "60", value.Comment("backend.socket.cwnd")), nil
+		return value.NewValue(value.INTEGER, "60", value.Comment(name)), nil
 
 	// Edge runtime could not know backend socket information.
 	// @Tentative
@@ -185,9 +281,8 @@ func (cv *CoreVariable) Get(name string) (*value.Value, error) {
 		return value.NewValue(value.INTEGER, "0", value.Comment(name)), nil
 	case v.CLIENT_SOCKET_CONGESTION_ALGORITHM:
 		return value.NewValue(value.STRING, "ctx.ClientSocketCongestionAlgorithm"), nil
-	// @Tentative
 	case v.CLIENT_SOCKET_CWND:
-		return value.NewValue(value.INTEGER, "60", value.Comment(name)), nil
+		return value.NewValue(value.INTEGER, "ctx.ClientSocketCWND"), nil
 	// @Tentative
 	case v.CLIENT_SOCKET_NEXTHOP:
 		return value.NewValue(value.IP, "net.IPv4(127, 0, 0, 1)", value.Comment(name)), nil
@@ -232,6 +327,7 @@ func (cv *CoreVariable) Get(name string) (*value.Value, error) {
 		return value.NewValue(value.INTEGER, "0", value.Comment(name)), nil
 	case v.ESI_ALLOW_INSIDE_CDATA:
 		return value.NewValue(value.BOOL, "ctx.EsiAllowInsideCData"), nil
+
 	// Error is always handles on-the-fly via golang way
 	// @Tentative
 	case v.FASTLY_ERROR:
@@ -265,8 +361,6 @@ func (cv *CoreVariable) Get(name string) (*value.Value, error) {
 	// @Tentative
 	case v.FASTLY_INFO_H2_STREAM_ID:
 		return value.NewValue(value.STRING, "0", value.Comment(name)), nil
-	// case v.FASTLY_INFO_HOST_HEADER:
-	// 	return nil, ErrNotImplemented(name)
 
 	// @Tentative
 	case v.FASTLY_INFO_IS_CLUSTER_EDGE:
@@ -274,56 +368,8 @@ func (cv *CoreVariable) Get(name string) (*value.Value, error) {
 	// @Tentative
 	case v.FASTLY_INFO_IS_CLUSTER_SHIELD:
 		return value.NewValue(value.BOOL, "false", value.Comment(name)), nil
-	// case v.FASTLY_INFO_IS_H2:
-	// 	return value.NewValue(value.BOOL, "false", value.Comment(name)), nil
-	// case v.FASTLY_INFO_IS_H3:
-	// 	return value.NewValue(value.BOOL, "false", value.Comment(name)), nil
 	case v.FASTLY_INFO_STATE:
 		return value.NewValue(value.STRING, "ctx.State"), nil
-	// case GEOIP_AREA_CODE:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_CITY:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_CITY_ASCII:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_CITY_LATIN1:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_CITY_UTF8:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_CONTINENT_CODE:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_COUNTRY_CODE:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_COUNTRY_CODE3:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_COUNTRY_NAME:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_COUNTRY_NAME_ASCII:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_COUNTRY_NAME_LATIN1:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_COUNTRY_NAME_UTF8:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_IP_OVERRIDE:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_LATITUDE:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_LONGITUDE:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_METRO_CODE:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_POSTAL_CODE:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_REGION:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_REGION_ASCII:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_REGION_LATIN1:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_REGION_UTF8:
-	// 	return nil, ErrNotImplemented(name)
-	// case GEOIP_USE_X_FORWARDED_FOR:
-	// 	return nil, ErrNotImplemented(name)
 	case v.MATH_1_PI:
 		return value.NewValue(value.FLOAT, "(1/math.Pi)", value.Dependency("math", "")), nil
 	case v.MATH_2_PI:
@@ -397,34 +443,9 @@ func (cv *CoreVariable) Get(name string) (*value.Value, error) {
 		return value.NewValue(value.TIME, "time.Now()", value.Dependency("time", "")), nil
 	case v.NOW_SEC:
 		return value.NewValue(value.STRING, "ctx.NowSec()"), nil
-	// case OBJ_AGE:
-	// 	return nil, ErrNotImplemented(name)
-	// case OBJ_CACHEABLE:
-	// 	return nil, ErrNotImplemented(name)
-	// case OBJ_ENTERED:
-	// 	return nil, ErrNotImplemented(name)
-	// case OBJ_GRACE:
-	// 	return nil, ErrNotImplemented(name)
-	// case OBJ_HITS:
-	// 	return nil, ErrNotImplemented(name)
-	// case OBJ_IS_PCI:
-	// 	return nil, ErrNotImplemented(name)
-	// case OBJ_LASTUSE:
-	// 	return nil, ErrNotImplemented(name)
-	// case OBJ_PROTO:
-	// 	return nil, ErrNotImplemented(name)
-	// case OBJ_RESPONSE:
-	// 	return nil, ErrNotImplemented(name)
-	// case OBJ_STALE_IF_ERROR:
-	// 	return nil, ErrNotImplemented(name)
-	// case OBJ_STALE_WHILE_REVALIDATE:
-	// 	return nil, ErrNotImplemented(name)
-	// case OBJ_STATUS:
-	// 	return nil, ErrNotImplemented(name)
-	// case OBJ_TTL:
-	// 	return nil, ErrNotImplemented(name)
 
 	// Edge runtime could now know quic info
+	// @Tentative
 	case v.QUIC_CC_CWND,
 		v.QUIC_CC_SSTHRESH,
 		v.QUIC_NUM_BYTES_RECEIVED,
@@ -441,133 +462,9 @@ func (cv *CoreVariable) Get(name string) (*value.Value, error) {
 		v.QUIC_RTT_VARIANCE:
 		return value.NewValue(value.INTEGER, "0", value.Comment(name)), nil
 
-	// case REQ_BACKEND:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_BACKEND_HEALTHY:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_BACKEND_IP:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_BACKEND_IS_CLUSTER:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_BACKEND_IS_ORIGIN:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_BACKEND_IS_SHIELD:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_BACKEND_NAME:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_BACKEND_PORT:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_BODY:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_BODY_BASE64:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_BODY_BYTES_READ:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_BYTES_READ:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_CUSTOMER_ID:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_DIGEST:
-	// 	return nil, ErrNotImplemented(name)
-
 	// @Tentative
 	case v.REQ_DIGEST_RATIO:
-		return value.NewValue(value.FLOAT, "0,4"), nil
-
-	// case REQ_ENABLE_RANGE_ON_PASS:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_ENABLE_SEGMENTED_CACHING:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_ESI:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_ESI_LEVEL:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_GRACE:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_HASH:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_HASH_ALWAYS_MISS:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_HASH_IGNORE_BUSY:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_HEADER_BYTES_READ:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_IS_BACKGROUND_FETCH:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_IS_CLUSTERING:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_IS_ESI_SUBREQ:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_IS_IPV6:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_IS_PURGE:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_IS_SSL:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_MAX_STALE_IF_ERROR:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_MAX_STALE_WHILE_REVALIDATE:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_METHOD:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_POSTBODY:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_PROTO:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_PROTOCOL:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_REQUEST:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_RESTARTS:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_SERVICE_ID:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_TOPURL:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_URL:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_URL_BASENAME:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_URL_DIRNAME:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_URL_EXT:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_URL_PATH:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_URL_QS:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_VCL:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_VCL_GENERATION:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_VCL_MD5:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_VCL_VERSION:
-	// 	return nil, ErrNotImplemented(name)
-	// case REQ_XID:
-	// 	return nil, ErrNotImplemented(name)
-	// case RESP_BODY_BYTES_WRITTEN:
-	// 	return nil, ErrNotImplemented(name)
-	// case RESP_BYTES_WRITTEN:
-	// 	return nil, ErrNotImplemented(name)
-	// case RESP_COMPLETED:
-	// 	return nil, ErrNotImplemented(name)
-	// case RESP_HEADER_BYTES_WRITTEN:
-	// 	return nil, ErrNotImplemented(name)
-	// case RESP_IS_LOCALLY_GENERATED:
-	// 	return nil, ErrNotImplemented(name)
-	// case RESP_PROTO:
-	// 	return nil, ErrNotImplemented(name)
-	// case RESP_RESPONSE:
-	// 	return nil, ErrNotImplemented(name)
-	// case RESP_STALE:
-	// 	return nil, ErrNotImplemented(name)
-	// case RESP_STALE_IS_ERROR:
-	// 	return nil, ErrNotImplemented(name)
-	// case RESP_STALE_IS_REVALIDATING:
-	// 	return nil, ErrNotImplemented(name)
-	// case RESP_STATUS:
-	// 	return nil, ErrNotImplemented(name)
+		return value.NewValue(value.FLOAT, "0,4", value.Comment(name)), nil
 
 	// @Tentative
 	case v.SEGMENTED_CACHING_AUTOPURGED:
@@ -664,16 +561,12 @@ func (cv *CoreVariable) Get(name string) (*value.Value, error) {
 		return value.NewValue(value.STRING, "US", value.Comment(name)), nil
 	// @Tentative
 	case v.SERVER_IP:
-		return value.NewValue(
-			value.IP,
-			"net.IPv4(127, 0, 0, 1)",
-			value.Comment(name),
-			value.Dependency("net", ""),
-		), nil
+		return value.NewValue(value.IP, "vintage.LocalHost", value.Comment(name)), nil
+
 	// Return empty string to stale.exists
 	// @Tentative
 	case v.STALE_EXISTS:
-		return value.NewValue(value.STRING, ""), nil
+		return value.NewValue(value.STRING, "", value.Comment(name)), nil
 
 	// Time related variables
 	case v.TIME_ELAPSED:
@@ -815,9 +708,6 @@ func (cv *CoreVariable) Get(name string) (*value.Value, error) {
 			value.Comment(name),
 		), nil
 
-	// case TLS_CLIENT_CIPHER:
-	// 	return nil, ErrNotImplemented(name)
-
 	// @Tentative
 	case v.TLS_CLIENT_CIPHERS_LIST:
 		return value.NewValue(
@@ -924,13 +814,449 @@ func (cv *CoreVariable) Get(name string) (*value.Value, error) {
 		return value.NewValue(value.BOOL, "false", value.Comment(name)), nil
 	}
 
+	// Lookup dynamic variables (e.g HTTP Headers)
+	if match := v.RequestHttpHeaderRegex.FindStringSubmatch(name); match != nil {
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf(`ctx.RequestHeader.Get("%s")`, match[1]),
+		), nil
+	}
+	if match := v.BackendRequestHttpHeaderRegex.FindStringSubmatch(name); match != nil {
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf(`ctx.BackendRequestHeader.Get("%s")`, match[1]),
+		), nil
+	}
+	if match := v.BackendResponseHttpHeaderRegex.FindStringSubmatch(name); match != nil {
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf(`ctx.BackendResponseHeader.Get("%s")`, match[1]),
+		), nil
+	}
+	// object header is treated the same as backend response
+	if match := v.ObjectHttpHeaderRegex.FindStringSubmatch(name); match != nil {
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf(`ctx.BackendResponseHeader.Get("%s")`, match[1]),
+		), nil
+	}
+	if match := v.ResponseHttpHeaderRegex.FindStringSubmatch(name); match != nil {
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf(`ctx.ResponseHeader.Get("%s")`, match[1]),
+		), nil
+	}
+
 	return cv.VariablesImpl.Get(name)
 }
 
-func (cv *CoreVariable) Set(name string, value *value.Value) error {
-	return fmt.Errorf("Unimplemented")
+func (cv *CoreVariable) Set(name string, val *value.Value) (*value.Value, error) {
+	switch name {
+	case v.BEREQ_BETWEEN_BYTES_TIMEOUT:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Backend.BetweenBytesTimeout = %s", val.Conversion(value.RTIME).String()),
+			value.FromValue(val),
+		), nil
+	case v.BEREQ_CONNECT_TIMEOUT:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Backend.ConnectTimeout = %s", val.Conversion(value.RTIME).String()),
+			value.FromValue(val),
+		), nil
+	case v.BEREQ_FIRST_BYTE_TIMEOUT:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Backend.FirstByteTimeout = %s", val.Conversion(value.RTIME).String()),
+			value.FromValue(val),
+		), nil
+	case v.BERESP_BROTLI:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.BackendResponseBrotli = %s\nctx.BackendResponseGzip = false", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.BERESP_CACHEABLE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.BackendResponseCacheable = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.BERESP_DO_ESI:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.BackendResponseDoESI = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.BERESP_DO_STREAM:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.BackendResponseDoStream = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.BERESP_GRACE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.BackendResponseGrace = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.BERESP_GZIP:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.BackendResponseGzip = %s\nctx.BackendResponseBrotli = false", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.BERESP_HIPAA:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.BackendResponseHipaa = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.BERESP_PCI:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.BackendResponsePCI = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.BERESP_SAINTMODE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.SaintMode = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.BERESP_STALE_IF_ERROR:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.BackendResponseStaleIfError = %s", val.Conversion(value.RTIME).String()),
+			value.FromValue(val),
+		), nil
+	case v.BERESP_STALE_WHILE_REVALIDATE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.BackendResponseStaleWhileRevalidate = %s", val.Conversion(value.RTIME).String()),
+			value.FromValue(val),
+		), nil
+	case v.BERESP_TTL:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.BackendResponseTTL = %s", val.Conversion(value.RTIME).String()),
+			value.FromValue(val),
+		), nil
+
+	case v.CLIENT_GEO_IP_OVERRIDE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.GeoIpOverride = %s", val.Conversion(value.IP).String()),
+			value.FromValue(val),
+		), nil
+
+	case v.CLIENT_IDENTITY:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.ClientIdentity = %s", val.Conversion(value.STRING).String()),
+			value.FromValue(val),
+		), nil
+
+	case v.CLIENT_SOCKET_CONGESTION_ALGORITHM:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.ClientSocketCongestionAlgorithm = %s", val.Conversion(value.STRING).String()),
+			value.FromValue(val),
+		), nil
+	case v.CLIENT_SOCKET_CWND:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.ClientSocketCWND = %s", val.Conversion(value.INTEGER).String()),
+			value.FromValue(val),
+		), nil
+	case v.CLIENT_SOCKET_PACE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.ClientSocketPace = %s", val.Conversion(value.INTEGER).String()),
+			value.FromValue(val),
+		), nil
+	case v.ESI_ALLOW_INSIDE_CDATA:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.EsiAllowInsideCData = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.GEOIP_IP_OVERRIDE:
+		vv, err := cv.Set(v.CLIENT_GEO_IP_OVERRIDE, val)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		vv.Deprecated = true
+		return vv, nil
+	case v.GEOIP_USE_X_FORWARDED_FOR:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.GeoIpUseXForwardedFor = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+			value.Deprecated(),
+		), nil
+
+	case v.OBJ_GRACE:
+		return cv.Set(v.BERESP_STALE_IF_ERROR, val) // Alias of beresp.stale_if_error
+	case v.OBJ_TTL:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.ObjectTTL = %s", val.Conversion(value.RTIME).String()),
+			value.FromValue(val),
+		), nil
+	case v.REQ_BACKEND:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Backend = %s", val.Conversion(value.BACKEND).String()),
+			value.FromValue(val),
+		), nil
+
+	case v.REQ_ENABLE_RANGE_ON_PASS:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.EnableRangeOnPass = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.REQ_ENABLE_SEGMENTED_CACHING:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.EnableSegmentedCaching = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.REQ_ESI:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.EnableESI = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.REQ_GRACE:
+		return cv.Set(v.REQ_MAX_STALE_IF_ERROR, val)
+	case v.REQ_HASH:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.RequestHash = %s", val.Conversion(value.STRING).String()),
+			value.FromValue(val),
+		), nil
+	case v.REQ_HASH_ALWAYS_MISS:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.HashAlwaysMiss = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.REQ_HASH_IGNORE_BUSY:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.HashIgnoreBusy = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.REQ_MAX_STALE_IF_ERROR:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.MaxStaleIfError = %s", val.Conversion(value.RTIME).String()),
+			value.FromValue(val),
+		), nil
+	case v.REQ_MAX_STALE_WHILE_REVALIDATE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.MaxStaleWhileRevalidate = %s", val.Conversion(value.RTIME).String()),
+			value.FromValue(val),
+		), nil
+	case v.RESP_STALE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.ResponseStale = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.RESP_STALE_IS_ERROR:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.ResponseStaleIsError = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.RESP_STALE_IS_REVALIDATING:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.ResponseStaleIsRevalidating = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.SEGMENTED_CACHING_BLOCK_SIZE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.SegmentedCachingBlockSize = %s", val.Conversion(value.INTEGER).String()),
+			value.FromValue(val),
+		), nil
+
+	case v.WAF_ANOMALY_SCORE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Waf.AnomalyScore = %s", val.Conversion(value.INTEGER).String()),
+			value.FromValue(val),
+		), nil
+	case v.WAF_BLOCKED:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Waf.Blocked = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.WAF_COUNTER:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Waf.Counter = %s", val.Conversion(value.INTEGER).String()),
+			value.FromValue(val),
+		), nil
+	case v.WAF_EXECUTED:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Waf.Executed = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.WAF_HTTP_VIOLATION_SCORE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Waf.HttpViolationScore = %s", val.Conversion(value.INTEGER).String()),
+			value.FromValue(val),
+		), nil
+	case v.WAF_INBOUND_ANOMALY_SCORE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Waf.InboundAnomalyScore = %s", val.Conversion(value.INTEGER).String()),
+			value.FromValue(val),
+		), nil
+	case v.WAF_LFI_SCORE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Waf.LFIScore = %s", val.Conversion(value.INTEGER).String()),
+			value.FromValue(val),
+		), nil
+	case v.WAF_LOGDATA:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Waf.Logdata = %s", val.Conversion(value.STRING).String()),
+			value.FromValue(val),
+		), nil
+	case v.WAF_LOGGED:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Waf.Logged = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.WAF_MESSAGE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Waf.Message = %s", val.Conversion(value.STRING).String()),
+			value.FromValue(val),
+		), nil
+	case v.WAF_PASSED:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Waf.Passed = %s", val.Conversion(value.BOOL).String()),
+			value.FromValue(val),
+		), nil
+	case v.WAF_RFI_SCORE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Waf.RFIScore = %s", val.Conversion(value.INTEGER).String()),
+			value.FromValue(val),
+		), nil
+	case v.WAF_RULE_ID:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Waf.RuleId = %s", val.Conversion(value.INTEGER).String()),
+			value.FromValue(val),
+		), nil
+	case v.WAF_SESSION_FIXATION_SCORE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Waf.SessionFixationScore = %s", val.Conversion(value.INTEGER).String()),
+			value.FromValue(val),
+		), nil
+	case v.WAF_SEVERITY:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Waf.Severity = %s", val.Conversion(value.INTEGER).String()),
+			value.FromValue(val),
+		), nil
+	case v.WAF_XSS_SCORE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Waf.XSSScore = %s", val.Conversion(value.INTEGER).String()),
+			value.FromValue(val),
+		), nil
+	}
+
+	// Set dynamic variables (e.g HTTP Headers)
+	if match := v.RequestHttpHeaderRegex.FindStringSubmatch(name); match != nil {
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf(`ctx.RequestHeader.Set("%s", %s)`, match[1], val.Conversion(value.STRING).String()),
+		), nil
+	}
+	if match := v.BackendRequestHttpHeaderRegex.FindStringSubmatch(name); match != nil {
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf(`ctx.BackendRequestHeader.Set("%s", %s)`, match[1], val.Conversion(value.STRING).String()),
+		), nil
+	}
+	if match := v.BackendResponseHttpHeaderRegex.FindStringSubmatch(name); match != nil {
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf(`ctx.BackendResponseHeader.Set("%s", %s)`, match[1], val.Conversion(value.STRING).String()),
+		), nil
+	}
+	// object header is treated the same as backend response
+	if match := v.ObjectHttpHeaderRegex.FindStringSubmatch(name); match != nil {
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf(`ctx.BackendResponseHeader.Set("%s", %s)`, match[1], val.Conversion(value.STRING).String()),
+		), nil
+	}
+	if match := v.ResponseHttpHeaderRegex.FindStringSubmatch(name); match != nil {
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf(`ctx.ResponseHeader.Set("%s", %s)`, match[1], val.Conversion(value.STRING).String()),
+		), nil
+	}
+
+	return cv.VariablesImpl.Set(name, val)
 }
 
-func (cv *CoreVariable) Unet(name string) error {
-	return fmt.Errorf("Unimplemented")
+func (cv *CoreVariable) Unset(name string) (*value.Value, error) {
+	switch name {
+	case v.FASTLY_ERROR:
+		// Nothing to do
+		return value.NewValue(value.NULL, ""), nil
+	}
+	// Unset dynamic variables (e.g HTTP Headers)
+	if match := v.RequestHttpHeaderRegex.FindStringSubmatch(name); match != nil {
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf(`ctx.RequestHeader.Unset("%s")`, match[1]),
+		), nil
+	}
+	if match := v.BackendRequestHttpHeaderRegex.FindStringSubmatch(name); match != nil {
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf(`ctx.BackendRequestHeader.Unset("%s")`, match[1]),
+		), nil
+	}
+	if match := v.BackendResponseHttpHeaderRegex.FindStringSubmatch(name); match != nil {
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf(`ctx.BackendResponseHeader.Unset("%s")`, match[1]),
+		), nil
+	}
+	// object header is treated the same as backend response
+	if match := v.ObjectHttpHeaderRegex.FindStringSubmatch(name); match != nil {
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf(`ctx.BackendResponseHeader.Unset("%s")`, match[1]),
+		), nil
+	}
+	if match := v.ResponseHttpHeaderRegex.FindStringSubmatch(name); match != nil {
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf(`ctx.ResponseHeader.Unset("%s")`, match[1]),
+		), nil
+	}
+	return cv.VariablesImpl.Unset(name)
 }

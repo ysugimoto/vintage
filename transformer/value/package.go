@@ -17,6 +17,15 @@ func (p Packages) Add(name, alias string) {
 	}
 }
 
+func (p Packages) Merge(pkgs Packages) {
+	if pkgs == nil {
+		return
+	}
+	for key, val := range pkgs {
+		p[key] = val
+	}
+}
+
 func (p Packages) Sorted() []string {
 	var sorted []string
 	for key, val := range p {

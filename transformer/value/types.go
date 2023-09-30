@@ -39,3 +39,27 @@ func GoTypeString(t VCLType) string {
 	}
 	return ""
 }
+
+func DefaultValue(t VCLType) string {
+	switch t {
+	case INTEGER:
+		return "0"
+	case FLOAT:
+		return "0"
+	case STRING:
+		return `""`
+	case BOOL:
+		return "false"
+	case IP:
+		return "nil"
+	case RTIME:
+		return "time.Duration(0)"
+	case TIME:
+		return "time.Time{}"
+	case BACKEND:
+		return "nil"
+	case ACL:
+		return "nil"
+	}
+	return ""
+}

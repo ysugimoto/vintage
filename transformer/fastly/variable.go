@@ -1,7 +1,6 @@
 package fastly
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/ysugimoto/vintage/transformer/core"
@@ -83,43 +82,11 @@ func (fv *FastlyVariable) Get(name string) (*value.Value, error) {
 	case v.BEREQ_URL_QS:
 		return value.NewValue(value.STRING, "ctx.BackendRequest.URL.RawQuery"), nil
 
-	// @Tentative
-	case v.BERESP_BACKEND_ALTERNATE_IPS:
-		return value.NewValue(value.STRING, "", value.Comment(name)), nil
-	// @Tentative
-	case v.BERESP_BACKEND_IP:
-		return value.NewValue(value.IP, "nil", value.Comment(name)), nil
-
 	case v.BERESP_BACKEND_NAME:
 		return value.NewValue(value.STRING, "ctx.Backend.Backend()"), nil
 	case v.BERESP_BACKEND_PORT:
 		return value.NewValue(value.INTEGER, "ctx.Backend.Port"), nil
 
-	// @Tentative
-	case v.BERESP_BACKEND_REQUESTS:
-		return value.NewValue(value.INTEGER, "1", value.Comment(name)), nil
-
-	case v.BERESP_BROTLI:
-		return value.NewValue(value.BOOL, "ctx.BackendResponseBrotli"), nil
-	case v.BERESP_CACHEABLE:
-		return value.NewValue(value.BOOL, "ctx.BackendResponseCacheable"), nil
-	case v.BERESP_DO_ESI:
-		return value.NewValue(value.BOOL, "ctx.BackendResponseDoESI"), nil
-	case v.BERESP_DO_STREAM:
-		return value.NewValue(value.BOOL, "ctx.BackendResponseDoStream"), nil
-	case v.BERESP_GRACE:
-		return value.NewValue(value.BOOL, "ctx.BackendResponseGrace"), nil
-	case v.BERESP_GZIP:
-		return value.NewValue(value.BOOL, "ctx.BackendResponseGzip"), nil
-
-	// @Tentative: Edge runtime could not know handshake related info
-	case v.BERESP_HANDSHAKE_TIME_TO_ORIGIN_MS:
-		return value.NewValue(value.INTEGER, "100", value.Comment(name)), nil
-
-	case v.BERESP_HIPAA:
-		return value.NewValue(value.BOOL, "ctx.BackendResponseHipaa"), nil
-	case v.BERESP_PCI:
-		return value.NewValue(value.BOOL, "ctx.BackendResponsePCI"), nil
 	case v.BERESP_PROTO:
 		return value.NewValue(value.BOOL, "ctx.BackendResponse.Request.Proto"), nil
 	case v.BERESP_RESPONSE:
@@ -138,12 +105,6 @@ func (fv *FastlyVariable) Get(name string) (*value.Value, error) {
 		return value.NewValue(value.RTIME, "ctx.BackendResponseStaleWhileRevalidate"), nil
 	case v.BERESP_STATUS:
 		return value.NewValue(value.INTEGER, "int64(ctx.BackendResponse.StatusCode)"), nil
-	case v.BERESP_TTL:
-		return value.NewValue(value.RTIME, "ctx.BackendResponseTTL"), nil
-
-	// @Tentative
-	case v.BERESP_USED_ALTERNATE_PATH_TO_ORIGIN:
-		return value.NewValue(value.BOOL, "false", value.Comment(name)), nil
 
 	case v.CLIENT_AS_NUMBER:
 		return value.NewValue(value.INTEGER, "int64(ctx.Geo.AsNumber)"), nil
@@ -183,10 +144,8 @@ func (fv *FastlyVariable) Get(name string) (*value.Value, error) {
 		v.CLIENT_GEO_COUNTRY_NAME_LATIN1,
 		v.CLIENT_GEO_COUNTRY_NAME_UTF8:
 		return value.NewValue(value.STRING, "ctx.Geo.CountryName"), nil
-
-	// @Tentative
 	case v.CLIENT_GEO_IP_OVERRIDE:
-		return value.NewValue(value.STRING, "", value.Comment(name)), nil
+		return value.NewValue(value.STRING, "ctx.GeoIpOverride"), nil
 
 	case v.CLIENT_GEO_POSTAL_CODE:
 		return value.NewValue(value.STRING, "ctx.Geo.PostalCode"), nil
@@ -288,15 +247,6 @@ func (fv *FastlyVariable) Get(name string) (*value.Value, error) {
 	case v.OBJ_TTL:
 		return value.NewValue(value.RTIME, "ctx.ObjectTTL"), nil
 
-	// @Tentative
-	case v.REQ_BACKEND_IP:
-		return value.NewValue(value.IP, "vintage.LocalHost", value.Comment(name)), nil
-	// @Tentative
-	case v.REQ_BACKEND_IS_CLUSTER:
-		return value.NewValue(value.BOOL, "false", value.Comment(name)), nil
-	case v.REQ_BACKEND_IS_SHIELD:
-		return value.NewValue(value.BOOL, "false", value.Comment(name)), nil
-
 	case v.REQ_BACKEND_PORT:
 		return value.NewValue(value.INTEGER, "ctx.Backend.Port"), nil
 	case v.REQ_BODY:
@@ -339,20 +289,6 @@ func (fv *FastlyVariable) Get(name string) (*value.Value, error) {
 				value.ErrorCheck,
 			),
 		), nil
-	case v.REQ_DIGEST:
-		return value.NewValue(value.STRING, "ctx.RequestDigest()"), nil
-	case v.REQ_ENABLE_RANGE_ON_PASS:
-		return value.NewValue(value.BOOL, "ctx.EnableRangeOnPass"), nil
-	case v.REQ_ENABLE_SEGMENTED_CACHING:
-		return value.NewValue(value.BOOL, "ctx.EnableSegmentedCaching"), nil
-	case v.REQ_HASH:
-		return value.NewValue(value.STRING, "ctx.RequestHash"), nil
-	case v.REQ_HASH_ALWAYS_MISS:
-		return value.NewValue(value.BOOL, "ctx.HashAlwaysMiss"), nil
-	case v.REQ_HASH_IGNORE_BUSY:
-		return value.NewValue(value.BOOL, "ctx.HashIgnoreBusy"), nil
-	case v.REQ_HEADER_BYTES_READ:
-		return value.NewValue(value.INTEGER, "ctx.RequestHeaderBytes"), nil
 	case v.REQ_IS_IPV6:
 		return value.NewValue(value.BOOL, "ctx.IsIpv6()"), nil
 	case v.REQ_IS_PURGE:
@@ -398,27 +334,6 @@ func (fv *FastlyVariable) Get(name string) (*value.Value, error) {
 	case v.REQ_URL_QS:
 		return value.NewValue(value.STRING, "ctx.Request.URL.RawQuery"), nil
 
-	// @Tentative
-	case v.REQ_VCL:
-		return value.NewValue(value.STRING, "vintage.vcl.transpiled", value.Comment(name)), nil
-	// Precalculated: md5("vintage.vcl.transpiled")
-	// @Tentative
-	case v.REQ_VCL_MD5:
-		return value.NewValue(value.STRING, "1061a3ce2c356a8a5e5423a824eba490", value.Comment(name)), nil
-
-	case v.REQ_XID:
-		return value.NewValue(value.STRING, "vintage.GenerateXid()"), nil
-	case v.RESP_BODY_BYTES_WRITTEN:
-		return value.NewValue(value.INTEGER, "ctx.ResponseBodyBytesWritten"), nil
-	case v.RESP_BYTES_WRITTEN:
-		return value.NewValue(value.INTEGER, "ctx.ResponseBytesWritten"), nil
-	case v.RESP_HEADER_BYTES_WRITTEN:
-		return value.NewValue(value.INTEGER, "ctx.ResponseHeaderBytesWritten"), nil
-
-	// @Tentative
-	case v.RESP_COMPLETED:
-		return value.NewValue(value.BOOL, "true", value.Comment(name)), nil
-
 	case v.RESP_PROTO:
 		return value.NewValue(value.STRING, "ctx.Response.Request.Proto"), nil
 	case v.RESP_RESPONSE:
@@ -443,12 +358,83 @@ func (fv *FastlyVariable) Get(name string) (*value.Value, error) {
 	return fv.CoreVariable.Get(name)
 }
 
-func (v *FastlyVariable) Set(name string, value *value.Value) error {
-	return errors.New("Not Implemented")
+func (fv *FastlyVariable) Set(name string, val *value.Value) (*value.Value, error) {
+	switch name {
+	case v.BEREQ_METHOD:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.BackendRequest.Method = %s", val.Conversion(value.STRING).String()),
+			value.FromValue(val),
+		), nil
+	case v.BEREQ_REQUEST:
+		return fv.Set(v.BEREQ_METHOD, val)
+	case v.BEREQ_URL:
+		tmp := value.Temporary()
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.SetURL(ctx.BackendRequest, %s)", tmp),
+			value.Prepare(
+				fmt.Sprintf("%s, err := url.Parse(%s)", tmp, val.Conversion(value.STRING).String()),
+				value.ErrorCheck,
+			),
+			value.FromValue(val),
+			value.Dependency("net/url", ""),
+		), nil
+	case v.BERESP_RESPONSE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.SetResponseBody(ctx.BackendResponse, %s)", val.Conversion(value.STRING).String()),
+			value.FromValue(val),
+		), nil
+	case v.BERESP_STATUS:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.BackendResponse.StatusCode = %s", val.Conversion(value.INTEGER).String()),
+			value.FromValue(val),
+		), nil
+	case v.OBJ_RESPONSE:
+		return fv.Set(v.BERESP_RESPONSE, val)
+	case v.OBJ_STATUS:
+		return fv.Set(v.BERESP_STATUS, val)
+	case v.REQ_METHOD:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Request.Method = %s", val.Conversion(value.STRING).String()),
+			value.FromValue(val),
+		), nil
+	case v.REQ_REQUEST:
+		return fv.Set(v.REQ_METHOD, val)
+	case v.REQ_URL:
+		tmp := value.Temporary()
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.SetURL(ctx.Request, %s)", tmp),
+			value.Prepare(
+				fmt.Sprintf("%s, err := url.Parse(%s)", tmp, val.Conversion(value.STRING).String()),
+				value.ErrorCheck,
+			),
+			value.FromValue(val),
+			value.Dependency("net/url", ""),
+		), nil
+	case v.RESP_RESPONSE:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.SetResponseBody(ctx.Response, %s)", val.Conversion(value.STRING).String()),
+			value.FromValue(val),
+		), nil
+	case v.RESP_STATUS:
+		return value.NewValue(
+			value.STRING,
+			fmt.Sprintf("ctx.Response.StatusCode = %s", val.Conversion(value.INTEGER).String()),
+			value.FromValue(val),
+		), nil
+	}
+
+	return fv.CoreVariable.Set(name, val)
 }
 
-func (v *FastlyVariable) Unset(name string) error {
-	return errors.New("Not Implemented")
+func (fv *FastlyVariable) Unset(name string) (*value.Value, error) {
+	return fv.CoreVariable.Unset(name)
 }
 
 var _ v.Variables = (*FastlyVariable)(nil)

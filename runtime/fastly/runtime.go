@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 
 	"github.com/fastly/compute-sdk-go/fsthttp"
 	"github.com/fastly/compute-sdk-go/geo"
@@ -23,10 +24,6 @@ type Runtime struct {
 	Response        *fsthttp.Response
 	ClientResponse  fsthttp.ResponseWriter
 	Geo             *geo.Geo
-
-	// Properties that will be assigned in the process
-	clientIdentity string
-	OriginalHost   string
 }
 
 func NewRuntime(w fsthttp.ResponseWriter, r *fsthttp.Request) (*Runtime, error) {
@@ -35,13 +32,14 @@ func NewRuntime(w fsthttp.ResponseWriter, r *fsthttp.Request) (*Runtime, error) 
 		return nil, errors.WithStack(err)
 	}
 
-	return &Runtime{
-		Runtime:        core.NewRuntime[*Runtime](fsthttp.Header{}, r.Header),
+	rt := &Runtime{
+		Runtime:        core.NewRuntime[*Runtime](r.Header),
 		ClientResponse: w,
 		Request:        r,
 		Geo:            g,
-		OriginalHost:   r.Host,
-	}, nil
+	}
+	rt.OriginalHost = r.Host
+	return rt, nil
 }
 
 func (r *Runtime) Execute(ctx context.Context) error {
@@ -52,14 +50,14 @@ func (r *Runtime) Execute(ctx context.Context) error {
 	return nil
 }
 
-func (r *Runtime) Proxy(ctx context.Context, backend *vintage.Backend) error {
+func (r *Runtime) Proxy(ctx context.Context, backend *vintage.Backend) (vintage.RawHeader, error) {
 	resp, err := r.Request.Send(ctx, backend.Backend())
 	if err != nil {
-		return errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
 	r.Response = resp
-	return nil
+	return vintage.RawHeader(resp.Header), nil
 }
 
 func (r *Runtime) WriteResponse() (int64, int64, int64, error) {
@@ -86,17 +84,18 @@ func (r *Runtime) WriteResponse() (int64, int64, int64, error) {
 	return headerSize, written, statusSize + headerSize + written, nil
 }
 
-func (r *Runtime) CreateBackendRequest() {
+func (r *Runtime) CreateBackendRequest() vintage.RawHeader {
 	r.BackendRequest = r.Request.Clone()
+	return vintage.RawHeader(r.BackendRequest.Header)
 }
 
-func (r *Runtime) CreateClientResponse() error {
+func (r *Runtime) CreateClientResponse() (vintage.RawHeader, error) {
 	beresp := r.BackendResponse
 
 	// Read and rewind backend response
 	var body bytes.Buffer
 	if _, err := body.ReadFrom(beresp.Body); err != nil {
-		return errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 	beresp.Body = io.NopCloser(bytes.NewReader(body.Bytes()))
 
@@ -105,8 +104,25 @@ func (r *Runtime) CreateClientResponse() error {
 		Request:    r.BackendRequest,
 		Backend:    r.Backend.Backend(),
 		StatusCode: beresp.StatusCode,
-		Header:     beresp.Header,
+		Header:     beresp.Header.Clone(),
 		Body:       io.NopCloser(bytes.NewReader(body.Bytes())),
 	}
-	return nil
+	return vintage.RawHeader(r.Response.Header), nil
+}
+
+func (r *Runtime) CreateObjectResponse(statusCode int, response string) (vintage.RawHeader, error) {
+	// Guard process that backend response already exists
+	if r.BackendResponse != nil {
+		return vintage.RawHeader(r.BackendResponse.Header), nil
+	}
+
+	r.IsLocallyGenerated = true
+	r.BackendResponse = &fsthttp.Response{
+		StatusCode: statusCode,
+		Header:     fsthttp.Header{},
+		Body:       io.NopCloser(strings.NewReader(response)),
+	}
+
+	return vintage.RawHeader(r.BackendResponse.Header), nil
+
 }

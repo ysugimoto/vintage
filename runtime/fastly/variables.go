@@ -2,12 +2,12 @@ package fastly
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"net"
 	"net/netip"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -64,14 +64,6 @@ func (r *Runtime) RequestBodyBase64() (string, error) {
 		return "", errors.WithStack(err)
 	}
 	return base64.StdEncoding.EncodeToString([]byte(body)), nil
-}
-
-// Used for req.digest
-func (r *Runtime) RequestDigest() string {
-	if r.RequestHash == "" {
-		return strings.Repeat("0", 64)
-	}
-	return fmt.Sprintf("%x", sha256.Sum256([]byte(r.RequestHash)))
 }
 
 // Used for req.url and bereq.url
@@ -265,4 +257,19 @@ func (r *Runtime) ResponseBody(resp *fsthttp.Response) (string, error) {
 	// rewind
 	resp.Body = io.NopCloser(bytes.NewReader(b.Bytes()))
 	return b.String(), nil
+}
+
+// Used for req.url and bereq.url setting
+func (r *Runtime) SetURL(req *fsthttp.Request, dst *url.URL) {
+	req.URL.Path = dst.Path
+	req.URL.RawQuery = dst.RawQuery
+	req.URL.RawFragment = dst.RawFragment
+}
+
+// Used for beresp.response and resp.response setting
+func (r *Runtime) SetResponseBody(resp *fsthttp.Response, body string) {
+	// Explicitly discard old response
+	_, _ = io.ReadAll(resp.Body)
+
+	resp.Body = io.NopCloser(strings.NewReader(body))
 }

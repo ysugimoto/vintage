@@ -1,7 +1,10 @@
 package core
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"net/textproto"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -10,49 +13,17 @@ import (
 	"github.com/ysugimoto/vintage"
 )
 
-type Subroutine[T EdgeRuntime] func(ctx T) (vintage.State, error)
-
-type Resource[T EdgeRuntime] func(c *Runtime[T])
-
-func BackendResource[T EdgeRuntime](name string, v *vintage.Backend) Resource[T] {
-	return func(c *Runtime[T]) {
-		c.Backends[name] = v
-		if v.IsDefault {
-			c.Backend = v
-		}
-	}
-}
-func AclResource[T EdgeRuntime](name string, v *vintage.Acl) Resource[T] {
-	return func(c *Runtime[T]) {
-		c.Acls[name] = v
-	}
-}
-func TableResource[T EdgeRuntime](name string, v *vintage.Table) Resource[T] {
-	return func(c *Runtime[T]) {
-		c.Tables[name] = v
-	}
-}
-func SubroutineResource[T EdgeRuntime](name string, v Subroutine[T]) Resource[T] {
-	return func(c *Runtime[T]) {
-		c.Subroutines[name] = v
-	}
-}
-
-func (c *Runtime[T]) Register(resources ...Resource[T]) {
-	for i := range resources {
-		resources[i](c)
-	}
-}
-
 type Runtime[T EdgeRuntime] struct {
-	Backend            *vintage.Backend
-	RequestHeader      *Header
-	ResponseHeader     *Header
-	RequestStartTime   time.Time
-	RequestEndTime     time.Time
-	Restarts           int
-	RequestHash        string
-	RequestHeaderBytes int64
+	Backend               *vintage.Backend
+	RequestHeader         *Header
+	BackendRequestHeader  *Header
+	BackendResponseHeader *Header
+	ResponseHeader        *Header
+	RequestStartTime      time.Time
+	RequestEndTime        time.Time
+	Restarts              int
+	RequestHash           string
+	RequestHeaderBytes    int64
 
 	// We should implement User-Agent related matcher by ourselves
 	UserAgent *UserAgent
@@ -60,15 +31,20 @@ type Runtime[T EdgeRuntime] struct {
 	Waf *Waf
 
 	// Declaration stacks
-	Backends    map[string]*vintage.Backend
-	Acls        map[string]*vintage.Acl
-	Tables      map[string]*vintage.Table
-	Subroutines map[string]Subroutine[T]
+	Backends         map[string]*vintage.Backend
+	Acls             map[string]*vintage.Acl
+	Tables           map[string]*vintage.Table
+	Subroutines      map[string]Subroutine[T]
+	LoggingEndpoints map[string]*vintage.LoggingEndpoint
 
 	// Properties that will be assigned in the process
+	ClientIdentity                      string
+	OriginalHost                        string
 	MaxStaleIfError                     time.Duration
 	MaxStaleWhileRevalidate             time.Duration
 	ClientSocketCongestionAlgorithm     string
+	ClientSocketCWND                    int64
+	ClientSocketPace                    int64
 	EsiAllowInsideData                  bool
 	EnableESI                           bool
 	ESILevel                            int64
@@ -88,6 +64,8 @@ type Runtime[T EdgeRuntime] struct {
 	ObjectStaleIfError                  time.Duration
 	ObjectStaleWhileRevalidate          time.Duration
 	ObjectTTL                           time.Duration
+	ObjectStatus                        int64
+	ObjectResponse                      string
 	EnableRangeOnPass                   bool
 	EnableSegmentedCaching              bool
 	HashAlwaysMiss                      bool
@@ -95,21 +73,31 @@ type Runtime[T EdgeRuntime] struct {
 	ResponseBytesWritten                int64
 	ResponseBodyBytesWritten            int64
 	ResponseHeaderBytesWritten          int64
+	GeoIpOverride                       string
+	GeoIpUseXForwardedFor               bool
+	SegmentedCachingBlockSize           int64
+	SaintMode                           bool
+	ResponseStale                       bool
+	ResponseStaleIsError                bool
+	ResponseStaleIsRevalidating         bool
+	ResponseCompleted                   bool
 }
 
-func NewRuntime[T EdgeRuntime](w, r map[string][]string, resources ...Resource[T]) *Runtime[T] {
+func NewRuntime[T EdgeRuntime](r map[string][]string, resources ...Resource[T]) *Runtime[T] {
 	c := &Runtime[T]{
 		RequestHeader:    NewHeader(textproto.MIMEHeader(r)),
-		ResponseHeader:   NewHeader(textproto.MIMEHeader(w)),
 		RequestStartTime: time.Now(),
 
-		Backends:    make(map[string]*vintage.Backend),
-		Acls:        make(map[string]*vintage.Acl),
-		Tables:      make(map[string]*vintage.Table),
-		Subroutines: make(map[string]Subroutine[T]),
+		Backends:         make(map[string]*vintage.Backend),
+		Acls:             make(map[string]*vintage.Acl),
+		Tables:           make(map[string]*vintage.Table),
+		Subroutines:      make(map[string]Subroutine[T]),
+		LoggingEndpoints: make(map[string]*vintage.LoggingEndpoint),
 
 		// Default variable values, (explicitly write default value even zero value)
 		ClientSocketCongestionAlgorithm:     "cubic",
+		ClientSocketCWND:                    60,
+		ClientSocketPace:                    131072, // 128KiB
 		EsiAllowInsideData:                  false,
 		EnableESI:                           false,
 		ESILevel:                            0,
@@ -122,11 +110,12 @@ func NewRuntime[T EdgeRuntime](w, r map[string][]string, resources ...Resource[T
 		BackendResponseGzip:                 false,
 		BackendResponseHipaa:                false,
 		BackendResponsePCI:                  false,
-		BackendResponseStaleIfError:         0,
-		BackendResponseStaleWhileRevalidate: 0,
-		ObjectStaleIfError:                  0,
-		ObjectStaleWhileRevalidate:          0,
-		ObjectTTL:                           0,
+		BackendResponseStaleIfError:         time.Duration(0),
+		BackendResponseStaleWhileRevalidate: time.Duration(0),
+		BackendResponseTTL:                  time.Duration(0),
+		ObjectStaleIfError:                  time.Duration(0),
+		ObjectStaleWhileRevalidate:          time.Duration(0),
+		ObjectTTL:                           time.Duration(0),
 		EnableRangeOnPass:                   false,
 		EnableSegmentedCaching:              false,
 		HashAlwaysMiss:                      false,
@@ -134,6 +123,14 @@ func NewRuntime[T EdgeRuntime](w, r map[string][]string, resources ...Resource[T
 		ResponseBytesWritten:                0,
 		ResponseBodyBytesWritten:            0,
 		ResponseHeaderBytesWritten:          0,
+		GeoIpOverride:                       "",
+		GeoIpUseXForwardedFor:               false,
+		SegmentedCachingBlockSize:           1,
+		SaintMode:                           false,
+		ResponseStale:                       false,
+		ResponseStaleIsError:                false,
+		ResponseStaleIsRevalidating:         false,
+		ResponseCompleted:                   false,
 	}
 	for i := range resources {
 		resources[i](c)
@@ -142,6 +139,23 @@ func NewRuntime[T EdgeRuntime](w, r map[string][]string, resources ...Resource[T
 	c.Waf = &Waf{}
 	c.RequestHeaderBytes = c.factoryInitRequestHeaderBytes(r)
 	return c
+}
+
+func (c *Runtime[T]) Cleanup() {
+	// Hook point to release some resources
+}
+
+func (c *Runtime[T]) RegexpMatch(src, dst string) (bool, error) {
+	re, err := regexp.Compile(src)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+	matches := re.FindStringSubmatch(dst)
+	if matches == nil {
+		return false, nil
+	}
+	return true, nil
+
 }
 
 func (c *Runtime[T]) factoryInitRequestHeaderBytes(hs map[string][]string) int64 {
@@ -175,4 +189,12 @@ func (c *Runtime[T]) RequestRangeHeader(mode string) (int64, error) {
 		return 0, errors.WithStack(err)
 	}
 	return i, nil
+}
+
+// Used for req.digest
+func (c *Runtime[T]) RequestDigest() string {
+	if c.RequestHash == "" {
+		return strings.Repeat("0", 64)
+	}
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(c.RequestHash)))
 }

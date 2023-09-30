@@ -35,6 +35,10 @@ func (h *Header) Set(key, value string) {
 	h.mh.Add(spl[0], fmt.Sprintf("%s=%s", spl[1], value))
 }
 
+func (h *Header) Add(key, value string) {
+	h.mh.Add(key, value)
+}
+
 func (h *Header) Get(key string) string {
 	if !strings.Contains(key, ":") {
 		return strings.Join(h.mh.Values(key), ", ")

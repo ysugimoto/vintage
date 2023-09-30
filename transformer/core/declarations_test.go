@@ -59,7 +59,7 @@ backend example {
 }`
 	vcl, err := parser.New(lexer.NewFromString(input)).ParseVCL()
 	if err != nil {
-		t.Errorf("Unexpected acl parsing error: %s", err)
+		t.Errorf("Unexpected backend parsing error: %s", err)
 		return
 	}
 	if len(vcl.Statements) != 1 {
@@ -97,7 +97,7 @@ director example client {
 }`
 	vcl, err := parser.New(lexer.NewFromString(input)).ParseVCL()
 	if err != nil {
-		t.Errorf("Unexpected acl parsing error: %s", err)
+		t.Errorf("Unexpected director parsing error: %s", err)
 		return
 	}
 	if len(vcl.Statements) != 1 {
@@ -137,7 +137,7 @@ table example STRING {
 }`
 	vcl, err := parser.New(lexer.NewFromString(input)).ParseVCL()
 	if err != nil {
-		t.Errorf("Unexpected acl parsing error: %s", err)
+		t.Errorf("Unexpected table parsing error: %s", err)
 		return
 	}
 	if len(vcl.Statements) != 1 {
@@ -171,10 +171,9 @@ func TestTransformSubroutine(t *testing.T) {
 sub vcl_recv {
   set req.http.Foo = "bar";
 }`
-	// expect := "func vcl_recv(ctx *fastly.Context) (vintage.State, error) {\n}\n"
 	vcl, err := parser.New(lexer.NewFromString(input)).ParseVCL()
 	if err != nil {
-		t.Errorf("Unexpected acl parsing error: %s", err)
+		t.Errorf("Unexpected subroutine parsing error: %s", err)
 		return
 	}
 	if len(vcl.Statements) != 1 {
@@ -193,8 +192,16 @@ sub vcl_recv {
 		t.Errorf("Failed to format code: %s", err)
 		return
 	}
-	// if diff := cmp.Diff(string(code), expect); diff != "" {
-	// 	t.Errorf("Subroutine code mismatch, diff=%s", diff)
-	// 	return
-	// }
+	expect := `
+func vcl_recv(ctx *core.Runtime) (vintage.State, error) {
+	re := vintage.RegexpMatchedGroup{}
+
+	ctx.RequestHeader.Set("Foo", "bar")
+	return vintage.NONE, nil
+}
+`
+	if diff := cmp.Diff("\n"+string(code), expect); diff != "" {
+		t.Errorf("Subroutine code mismatch, diff=%s", diff)
+		return
+	}
 }

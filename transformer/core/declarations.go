@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/ysugimoto/falco/ast"
@@ -141,26 +142,33 @@ func (tf *CoreTransformer) transformSubroutine(sub *ast.SubroutineDeclaration) (
 
 	name := sub.Name.String()
 	if sub.ReturnType != nil {
-		tf.functionSubroutines[name] = value.NewValue(value.IDENT, name)
+		tf.functionSubroutines[name] = value.NewValue(value.VCLType(sub.ReturnType.Value), name)
 		buf.WriteString(fmt.Sprintf(
-			"func %s(ctx *fastly.Runtime) (%s, error) {"+lineFeed,
+			"func %s(ctx *%s) (%s, error) {"+lineFeed,
 			name,
+			tf.runtimeName,
 			value.GoTypeString(value.VCLType(sub.ReturnType.Value)),
 		))
+		buf.WriteString("re := vintage.RegexpMatchedGroup{}" + lineFeed)
+		buf.WriteString(lineFeed)
 		inside, _, err := tf.transformBlockStatement(sub.Block.Statements)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 		buf.Write(inside)
-		buf.WriteString("}\n")
+		buf.WriteString("}" + lineFeed)
 		return buf.Bytes(), nil
 	}
 
 	tf.subroutines[name] = value.NewValue(value.IDENT, name)
 
-	buf.WriteString(
-		fmt.Sprintf("func %s(ctx *fastly.Runtime) (vintage.State, error) {"+lineFeed, name),
-	)
+	buf.WriteString(fmt.Sprintf(
+		"func %s(ctx *%s) (vintage.State, error) {"+lineFeed,
+		name,
+		tf.runtimeName,
+	))
+	buf.WriteString("re := vintage.RegexpMatchedGroup{}" + lineFeed)
+	buf.WriteString(lineFeed)
 	inside, rs, err := tf.transformBlockStatement(sub.Block.Statements)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -169,8 +177,20 @@ func (tf *CoreTransformer) transformSubroutine(sub *ast.SubroutineDeclaration) (
 	if !rs {
 		buf.WriteString(`return vintage.NONE, nil` + lineFeed)
 	}
-	buf.WriteString("}\n")
+	buf.WriteString("}" + lineFeed)
 
 	return buf.Bytes(), nil
 
+}
+
+func (tf *CoreTransformer) transformLoggingEndpoint(name string) ([]byte, error) {
+	var buf bytes.Buffer
+
+	// Need to replace from "-" to "_" due to name is used on program variable
+	tf.loggingEndpoints[name] = "logging__" + strings.ReplaceAll(name, "-", "_")
+	buf.WriteString(
+		fmt.Sprintf(`var %s = vintage.NewLoggingEndpoint("%s")`, tf.loggingEndpoints[name], name),
+	)
+
+	return buf.Bytes(), nil
 }

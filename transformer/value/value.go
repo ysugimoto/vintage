@@ -16,15 +16,18 @@ func Prepare(preps ...string) ValueOption {
 			}
 			codes = append(codes, preps[i])
 		}
-		e.Prepare = strings.Join(codes, "\n") + "\n"
+		if len(codes) > 0 {
+			e.Prepare = strings.Join(codes, "\n") + "\n"
+		}
 	}
 }
 
 func Dependency(pkg, alias string) ValueOption {
 	return func(e *Value) {
-		e.Dependencies = Packages{
-			pkg: {alias},
+		if e.Dependencies == nil {
+			e.Dependencies = Packages{}
 		}
+		e.Dependencies[pkg] = Package{Alias: alias}
 	}
 }
 
@@ -37,6 +40,18 @@ func Comment(c string) ValueOption {
 func Deprecated() ValueOption {
 	return func(e *Value) {
 		e.Deprecated = true
+	}
+}
+
+func FromValue(v *Value) ValueOption {
+	return func(e *Value) {
+		e.Prepare += v.Prepare
+		e.Comment += v.Comment
+		if v.Dependencies != nil {
+			for key, val := range v.Dependencies {
+				e.Dependencies[key] = val
+			}
+		}
 	}
 }
 
@@ -108,8 +123,16 @@ func (v *Value) boolConversion() *Value {
 }
 
 var temporaryVarCount int
+var useFixedName bool
+
+func UseFixedTemporalValue() {
+	useFixedName = true
+}
 
 func Temporary() string {
+	if useFixedName {
+		return "tmp__fixed"
+	}
 	temporaryVarCount++
 	return fmt.Sprintf("tmp__%d", temporaryVarCount)
 }

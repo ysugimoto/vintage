@@ -18,3 +18,9 @@ func WithVariables(v variable.Variables) TransformOption {
 		t.variables = v
 	}
 }
+
+func WithRuntimeName(v string) TransformOption {
+	return func(t *CoreTransformer) {
+		t.runtimeName = v
+	}
+}

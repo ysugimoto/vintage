@@ -21,10 +21,12 @@ type CoreTransformer struct {
 	tables              map[string]*value.Value
 	subroutines         map[string]*value.Value
 	functionSubroutines map[string]*value.Value
+	loggingEndpoints    map[string]string
 	Packages            value.Packages
 
-	vars      map[string]*value.Value
-	variables variable.Variables
+	vars        map[string]*value.Value
+	variables   variable.Variables
+	runtimeName string
 }
 
 func NewCoreTransfromer(opts ...TransformOption) *CoreTransformer {
@@ -34,9 +36,13 @@ func NewCoreTransfromer(opts ...TransformOption) *CoreTransformer {
 		tables:              make(map[string]*value.Value),
 		vars:                make(map[string]*value.Value),
 		subroutines:         make(map[string]*value.Value),
-		functionSubroutines: make(map[string]*value.Value), Packages: value.Packages{
+		functionSubroutines: make(map[string]*value.Value),
+		loggingEndpoints:    make(map[string]string),
+		Packages: value.Packages{
 			"github.com/ysugimoto/vintage": {},
 		},
+		variables:   NewCoreVariables(),
+		runtimeName: "core.Runtime",
 	}
 	for i := range opts {
 		opts[i](t)
@@ -67,6 +73,7 @@ func (tf *CoreTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 		return nil, errors.WithStack(err)
 	}
 
+	var buf bytes.Buffer
 	if tf.snippets != nil {
 		for _, snip := range tf.snippets.EmbedSnippets() {
 			s, err := parser.New(
@@ -84,7 +91,6 @@ func (tf *CoreTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	var buf bytes.Buffer
 	var code []byte
 	for _, stmt := range vcl.Statements {
 		switch s := stmt.(type) {

@@ -3,6 +3,9 @@ package vintage
 import (
 	"net"
 	"time"
+
+	"github.com/fastly/compute-sdk-go/rtlog"
+	"github.com/pkg/errors"
 )
 
 type Backend struct {
@@ -155,4 +158,26 @@ func NewTable(name, itemType string, items ...TableOption) *Table {
 		items[i](t)
 	}
 	return t
+}
+
+type LoggingEndpoint struct {
+	Name     string
+	endpoint *rtlog.Endpoint
+}
+
+func NewLoggingEndpoint(name string) *LoggingEndpoint {
+	return &LoggingEndpoint{
+		Name: name,
+		// Not open until actually write log message
+	}
+}
+
+func (l *LoggingEndpoint) Write(message string) error {
+	if l.endpoint == nil {
+		l.endpoint = rtlog.Open(l.Name)
+	}
+	if _, err := l.endpoint.Write([]byte(message)); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }

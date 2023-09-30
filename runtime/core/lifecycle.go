@@ -80,7 +80,8 @@ func (c *Runtime[T]) lifecycleMiss(ctx context.Context, r T) error {
 	var state vintage.State = vintage.FETCH
 	var err error
 
-	r.CreateBackendRequest()
+	rh := r.CreateBackendRequest()
+	c.BackendRequestHeader = NewHeader(rh)
 
 	if miss, ok := c.Subroutines[fastlySubroutineMiss]; ok {
 		state, err = miss(r)
@@ -116,7 +117,8 @@ func (c *Runtime[T]) lifecyclePass(ctx context.Context, r T) error {
 	var state vintage.State = vintage.FETCH
 	var err error
 
-	r.CreateBackendRequest()
+	rh := r.CreateBackendRequest()
+	c.BackendRequestHeader = NewHeader(rh)
 
 	if vclPass, ok := c.Subroutines[fastlySubroutinePass]; ok {
 		state, err = vclPass(r)
@@ -143,8 +145,10 @@ func (c *Runtime[T]) lifecycleFetch(ctx context.Context, r T) error {
 	var state vintage.State = vintage.DELIVER
 	var err error
 
-	if err = r.Proxy(ctx, c.Backend); err != nil {
+	if rh, err := r.Proxy(ctx, c.Backend); err != nil {
 		return errors.WithStack(err)
+	} else {
+		c.BackendRequestHeader = NewHeader(rh)
 	}
 
 	if vclFetch, ok := c.Subroutines[fastlySubroutineFetch]; ok {
@@ -168,8 +172,10 @@ func (c *Runtime[T]) lifecycleFetch(ctx context.Context, r T) error {
 		return errors.WithStack(err)
 	}
 
-	if err = r.CreateClientResponse(); err != nil {
+	if rh, err := r.CreateClientResponse(); err != nil {
 		return errors.WithStack(err)
+	} else {
+		c.ResponseHeader = NewHeader(rh)
 	}
 
 	return nil
@@ -178,6 +184,15 @@ func (c *Runtime[T]) lifecycleFetch(ctx context.Context, r T) error {
 func (c *Runtime[T]) lifecycleError(ctx context.Context, r T) error {
 	var state vintage.State = vintage.DELIVER
 	var err error
+
+	// Possibillity response object is nil, then need to construct via runtime
+	if c.BackendResponseHeader == nil {
+		if rh, err := r.CreateObjectResponse(int(c.ObjectStatus), c.ObjectResponse); err != nil {
+			return errors.WithStack(err)
+		} else {
+			c.BackendResponseHeader = NewHeader(rh)
+		}
+	}
 
 	if vclError, ok := c.Subroutines[fastlySubroutineError]; ok {
 		state, err = vclError(r)
@@ -204,7 +219,7 @@ func (c *Runtime[T]) lifecycleDeliver(ctx context.Context, r T) error {
 	var state vintage.State = vintage.LOG
 	var err error
 
-	// Time to first bytes is calculates from restart has started to vcl_deliver will call.
+	// Time to first bytes is calculated from restart has started to vcl_deliver will call.
 	// https://developer.fastly.com/reference/vcl/variables/client-response/time-to-first-byte/
 	c.TimeToFirstByte = time.Since(c.RequestStartTime)
 	c.RequestEndTime = time.Now()
@@ -237,6 +252,7 @@ func (c *Runtime[T]) lifecycleLog(ctx context.Context, r T) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
+	c.ResponseCompleted = true
 
 	if vclLog, ok := c.Subroutines[fastlySubroutineLog]; ok {
 		if _, err := vclLog(r); err != nil {
