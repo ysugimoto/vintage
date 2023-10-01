@@ -24,6 +24,11 @@ type Runtime struct {
 	Response        *fsthttp.Response
 	ClientResponse  fsthttp.ResponseWriter
 	Geo             *geo.Geo
+	clientIdentity  string
+}
+
+func (r *Runtime) Context() *core.Runtime[*Runtime] {
+	return r.Runtime
 }
 
 func NewRuntime(w fsthttp.ResponseWriter, r *fsthttp.Request) (*Runtime, error) {

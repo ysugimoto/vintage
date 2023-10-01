@@ -1,0 +1,67 @@
+package function
+
+import (
+	"testing"
+)
+
+// Fastly built-in function testing implementation of json.escape
+// Arguments may be:
+// - STRING
+// Reference: https://developer.fastly.com/reference/vcl/functions/strings/json-escape/
+func Test_Json_escape(t *testing.T) {
+	tests := []struct {
+		input  string
+		expect string
+	}{
+		{
+			input:  `abc123`,
+			expect: "abc123",
+		},
+		{
+			input:  "/foo/bar",
+			expect: "/foo/bar",
+		},
+		{
+			input:  "?p=q&x=y",
+			expect: "?p=q&x=y",
+		},
+		{
+			input:  `"`,
+			expect: "\"",
+		},
+		{
+			input:  "\n",
+			expect: "\\n",
+		},
+		{
+			input: "	",
+			expect: "\\t",
+		},
+		{
+			input:  "αβγ",
+			expect: "αβγ",
+		},
+		{
+			input:  string([]byte{0xFF}),
+			expect: "",
+		},
+		{
+			input:  string([]byte{0x61, 0x20, 0x2B, 0x20, 0xCC}),
+			expect: "",
+		},
+		{
+			input:  "😁",
+			expect: "\\uD83D\\uDE01",
+		},
+	}
+
+	for _, tt := range tests {
+		ret, err := Json_escape(newTestRuntime(), tt.input)
+		if err != nil {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if ret != tt.expect {
+			t.Errorf("Return value unmatch, expect=%s, got=%s", tt.expect, ret)
+		}
+	}
+}

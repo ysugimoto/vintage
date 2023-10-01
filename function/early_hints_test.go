@@ -1,0 +1,13 @@
+package function
+
+import (
+	"testing"
+)
+
+// Fastly built-in function testing implementation of early_hints
+// Arguments may be:
+// - STRING, STRING_LIST
+// Reference: https://developer.fastly.com/reference/vcl/functions/tls-and-http/early-hints/
+func Test_Early_hints(t *testing.T) {
+	t.Skip("Skip test because we do not support early_hints function")
+}

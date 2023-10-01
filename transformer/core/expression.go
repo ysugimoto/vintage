@@ -349,7 +349,7 @@ func (tf *CoreTransformer) transformFunctionCallExpression(
 		v,
 		value.Prepare(
 			prepares,
-			fmt.Sprintf("%s, err := %s(%s)", v, fn.Name, strings.Join(arguments, ", ")),
+			fmt.Sprintf("%s, err := %s(ctx.Runtime, %s)", v, fn.Name, strings.Join(arguments, ", ")),
 			value.ErrorCheck,
 		),
 	), nil

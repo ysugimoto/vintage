@@ -376,7 +376,7 @@ func (tf *CoreTransformer) transformFunctionCallStatement(stmt *ast.FunctionCall
 	}
 
 	tf.Packages.Add("github.com/ysugimoto/vintage/builtin", "")
-	code := fn.Name + "("
+	code := fn.Name + "(ctx.Runtime, "
 	var prepares string
 	var arguments []string
 	var argIndex int

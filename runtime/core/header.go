@@ -8,47 +8,47 @@ import (
 )
 
 type Header struct {
-	mh textproto.MIMEHeader
+	MH textproto.MIMEHeader
 }
 
 func NewHeader(h map[string][]string) *Header {
 	return &Header{
-		mh: textproto.MIMEHeader(h),
+		MH: textproto.MIMEHeader(h),
 	}
 }
 
 func (h *Header) Set(key, value string) {
 	if !strings.Contains(key, ":") {
-		h.mh.Set(key, value)
+		h.MH.Set(key, value)
 		return
 	}
 	spl := strings.SplitN(key, ":", 2)
 	if strings.EqualFold(spl[0], "cookie") {
 		s := fmt.Sprintf("%s=%s", sanitizeCookieName(spl[1]), sanitizeCookieValue(value))
-		if c := h.mh.Get("Cookie"); c != "" {
-			h.mh.Set("Cookie", c+"; "+s)
+		if c := h.MH.Get("Cookie"); c != "" {
+			h.MH.Set("Cookie", c+"; "+s)
 		} else {
-			h.mh.Set("Cookie", s)
+			h.MH.Set("Cookie", s)
 		}
 		return
 	}
-	h.mh.Add(spl[0], fmt.Sprintf("%s=%s", spl[1], value))
+	h.MH.Add(spl[0], fmt.Sprintf("%s=%s", spl[1], value))
 }
 
 func (h *Header) Add(key, value string) {
-	h.mh.Add(key, value)
+	h.MH.Add(key, value)
 }
 
 func (h *Header) Get(key string) string {
 	if !strings.Contains(key, ":") {
-		return strings.Join(h.mh.Values(key), ", ")
+		return strings.Join(h.MH.Values(key), ", ")
 	}
 	spl := strings.SplitN(key, ":", 2)
 	if strings.EqualFold(spl[0], "cookie") {
-		return readCookie(h.mh["Cookie"], spl[1])
+		return readCookie(h.MH["Cookie"], spl[1])
 	}
 
-	for _, hv := range h.mh.Values(spl[0]) {
+	for _, hv := range h.MH.Values(spl[0]) {
 		kv := strings.SplitN(hv, "=", 2)
 		if kv[0] == spl[1] {
 			return kv[1]
@@ -59,7 +59,7 @@ func (h *Header) Get(key string) string {
 
 func (h *Header) Unset(key string) {
 	if !strings.Contains(key, ":") {
-		h.mh.Del(key)
+		h.MH.Del(key)
 		return
 	}
 
@@ -72,7 +72,7 @@ func (h *Header) Unset(key string) {
 	}
 
 	var filtered []string
-	for _, hv := range h.mh.Values(spl[0]) {
+	for _, hv := range h.MH.Values(spl[0]) {
 		kv := strings.SplitN(hv, "=", 2)
 		if kv[0] == spl[1] {
 			continue
@@ -80,16 +80,16 @@ func (h *Header) Unset(key string) {
 		filtered = append(filtered, hv)
 	}
 
-	h.mh.Del(spl[0])
+	h.MH.Del(spl[0])
 	if len(filtered) > 0 {
 		for i := range filtered {
-			h.mh.Add(spl[0], filtered[i])
+			h.MH.Add(spl[0], filtered[i])
 		}
 	}
 }
 
 func (h *Header) removeCookieByName(cookieName string) {
-	lines := h.mh["Cookie"]
+	lines := h.MH["Cookie"]
 	if len(lines) == 0 {
 		return
 	}
@@ -119,9 +119,9 @@ func (h *Header) removeCookieByName(cookieName string) {
 		}
 	}
 	if len(filtered) > 0 {
-		h.mh["Cookie"] = filtered
+		h.MH["Cookie"] = filtered
 	} else {
-		h.mh.Del("Cookie")
+		h.MH.Del("Cookie")
 	}
 }
 

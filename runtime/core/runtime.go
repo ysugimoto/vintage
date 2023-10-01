@@ -38,7 +38,6 @@ type Runtime[T EdgeRuntime] struct {
 	LoggingEndpoints map[string]*vintage.LoggingEndpoint
 
 	// Properties that will be assigned in the process
-	ClientIdentity                      string
 	OriginalHost                        string
 	MaxStaleIfError                     time.Duration
 	MaxStaleWhileRevalidate             time.Duration
@@ -81,6 +80,12 @@ type Runtime[T EdgeRuntime] struct {
 	ResponseStaleIsError                bool
 	ResponseStaleIsRevalidating         bool
 	ResponseCompleted                   bool
+
+	// Following fields are set via builtin function
+	FastlyError               string
+	DisableCompressionHeaders []string
+	PushResources             []string
+	H3AltSvc                  bool
 }
 
 func NewRuntime[T EdgeRuntime](r map[string][]string, resources ...Resource[T]) *Runtime[T] {

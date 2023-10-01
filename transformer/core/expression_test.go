@@ -128,7 +128,7 @@ func TestTransformExpression(t *testing.T) {
 		{
 			input: `set req.http.Foo = substr(req.http.Bar, 1);`,
 			expect: value.NewValue(value.STRING, "tmp__fixed", value.Prepare(
-				`tmp__fixed, err := builtin.Substr(ctx.RequestHeader.Get("Bar"), 1)`,
+				`tmp__fixed, err := builtin.Substr(ctx.Runtime, ctx.RequestHeader.Get("Bar"), 1)`,
 				value.ErrorCheck,
 			)),
 		},
