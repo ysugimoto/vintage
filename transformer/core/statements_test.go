@@ -337,11 +337,9 @@ func TestTransformCallStatement(t *testing.T) {
 		{
 			input: `call custom_subroutine;`,
 			expect: strings.Join([]string{
-				"tmp__fixed, err := custom_subroutine(ctx)",
-				"if err != nil {",
+				"if tmp__fixed, err := custom_subroutine(ctx); err != nil {",
 				"return vintage.NONE, err",
-				"}",
-				"if tmp__fixed != vintage.NONE {",
+				"} else if tmp__fixed != vintage.NONE {",
 				"return tmp__fixed, nil",
 				"}",
 			}, "\n"),
@@ -530,11 +528,9 @@ if (!req.http.Foo) {
 			expect: strings.Join([]string{
 				`if !vintage.ToBool(ctx.RequestHeader.Get("Foo")) {`,
 				`ctx.RequestHeader.Set("Foo", "bar")`,
-				"}",
-				`else if !vintage.ToBool(ctx.RequestHeader.Get("Hoge")) {`,
+				`} else if !vintage.ToBool(ctx.RequestHeader.Get("Hoge")) {`,
 				`ctx.RequestHeader.Set("Hoge", "huga")`,
-				"}",
-				"else {",
+				"} else {",
 				"return vintage.RESTART, nil",
 				"}",
 			}, "\n"),

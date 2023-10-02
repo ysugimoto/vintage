@@ -195,6 +195,7 @@ sub vcl_recv {
 	expect := `
 func vcl_recv(ctx *core.Runtime) (vintage.State, error) {
 	re := vintage.RegexpMatchedGroup{}
+	defer re.Release()
 
 	ctx.RequestHeader.Set("Foo", "bar")
 	return vintage.NONE, nil

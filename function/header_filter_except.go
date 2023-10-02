@@ -20,7 +20,7 @@ func Header_filter_except[T core.EdgeRuntime](
 	headers ...string,
 ) error {
 	filter := make(map[string]struct{})
-	for i := 1; i < len(headers); i++ {
+	for i := 0; i < len(headers); i++ {
 		if !lib.IsValidHeader(headers[i]) {
 			return errors.FunctionError(
 				Header_filter_except_Name,

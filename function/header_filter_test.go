@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ysugimoto/falco/interpreter/value"
 	"github.com/ysugimoto/vintage/runtime/core"
 )
 
@@ -13,14 +12,14 @@ import (
 // - ID, STRING_LIST
 // Reference: https://developer.fastly.com/reference/vcl/functions/headers/header-filter/
 func Test_Header_filter(t *testing.T) {
-	t.Run("Invalis argument", func(t *testing.T) {
+	t.Run("Invalid argument", func(t *testing.T) {
 		tests := []struct {
-			name       value.Value
+			name       string
 			isFiltered bool
 			isError    bool
 		}{
-			{name: &value.String{Value: ""}, isError: true},
-			{name: &value.String{Value: "Invalid%Header$<>"}, isError: true},
+			{name: "", isError: true},
+			{name: "Invalid%Header$<>", isError: true},
 		}
 		for i, tt := range tests {
 			ctx := newTestRuntime()

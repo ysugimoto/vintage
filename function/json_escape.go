@@ -41,7 +41,7 @@ func Json_escape[T core.EdgeRuntime](
 	}
 
 	var escaped []rune
-	for _, r := range []rune(str) {
+	for _, r := range str {
 		if v, ok := Json_escape_CharacterMap[r]; ok {
 			escaped = append(escaped, v...)
 			continue

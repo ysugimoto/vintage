@@ -3,7 +3,6 @@ package function
 import (
 	"math"
 
-	"github.com/ysugimoto/vintage/lib"
 	"github.com/ysugimoto/vintage/runtime/core"
 )
 
@@ -41,9 +40,6 @@ func Math_atan2[T core.EdgeRuntime](
 		return -(math.Pi / 2), nil
 	case y > 0 && x == 0:
 		return math.Pi / 2, nil
-	case y == 0 && lib.IsPositiveZero(x):
-		// pole error will not occur.
-		return 0, nil
 	case y == 0 && x == 0:
 		ctx.FastlyError = "EDOM"
 		return 0, nil

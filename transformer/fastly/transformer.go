@@ -17,7 +17,11 @@ type FastlyTransformer struct {
 
 func NewFastlyTransformer(opts ...core.TransformOption) *FastlyTransformer {
 	// Add Fastly specific variable resolver
-	opts = append(opts, core.WithVariables(NewFastlyVariable()))
+	opts = append(
+		opts,
+		core.WithVariables(NewFastlyVariable()),
+		core.WithRuntimeName("fastly.Runtime"),
+	)
 	f := &FastlyTransformer{
 		core.NewCoreTransfromer(opts...),
 	}
@@ -36,7 +40,6 @@ func (tf *FastlyTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 	var out bytes.Buffer
 	vars := tf.CoreTransformer.TemplateVariables()
 	vars["Declarations"] = string(buf)
-	fmt.Println(vars["Packages"])
 	if err := tmpl.Execute(&out, vars); err != nil {
 		return nil, errors.WithStack(err)
 	}

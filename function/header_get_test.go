@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/ysugimoto/falco/interpreter/value"
 	"github.com/ysugimoto/vintage/runtime/core"
 	// "github.com/ysugimoto/falco/interpreter/value"
 )
@@ -17,12 +16,12 @@ func Test_Header_get(t *testing.T) {
 
 	t.Run("Invalid arguments", func(t *testing.T) {
 		tests := []struct {
-			name    value.Value
+			name    string
 			expect  string
 			isError bool
 		}{
-			{name: &value.String{Value: ""}, expect: ""},
-			{name: &value.String{Value: "Invalid%Header$<>"}, expect: ""},
+			{name: "", expect: ""},
+			{name: "Invalid%Header$<>", expect: ""},
 		}
 		for i, tt := range tests {
 			ctx := newTestRuntime()
@@ -47,14 +46,14 @@ func Test_Header_get(t *testing.T) {
 
 	t.Run("get from req", func(t *testing.T) {
 		tests := []struct {
-			name    value.Value
+			name    string
 			expect  string
 			isError bool
 		}{
-			{name: &value.String{Value: "X-Custom-Header"}, expect: "value"},
-			{name: &value.String{Value: "X-Not-Found"}, expect: ""},
-			{name: &value.String{Value: "OBJECT:foo"}, expect: "valuefoo"},
-			{name: &value.String{Value: "OBJECT:baz"}, expect: ""},
+			{name: "X-Custom-Header", expect: "value"},
+			{name: "X-Not-Found", expect: ""},
+			{name: "OBJECT:foo", expect: "valuefoo"},
+			{name: "OBJECT:baz", expect: ""},
 		}
 
 		for i, tt := range tests {
@@ -85,14 +84,14 @@ func Test_Header_get(t *testing.T) {
 
 	t.Run("get from bereq", func(t *testing.T) {
 		tests := []struct {
-			name    value.Value
+			name    string
 			expect  string
 			isError bool
 		}{
-			{name: &value.String{Value: "X-Custom-Header"}, expect: "value"},
-			{name: &value.String{Value: "X-Not-Found"}, expect: ""},
-			{name: &value.String{Value: "OBJECT:foo"}, expect: "valuefoo"},
-			{name: &value.String{Value: "OBJECT:baz"}, expect: ""},
+			{name: "X-Custom-Header", expect: "value"},
+			{name: "X-Not-Found", expect: ""},
+			{name: "OBJECT:foo", expect: "valuefoo"},
+			{name: "OBJECT:baz", expect: ""},
 		}
 
 		for i, tt := range tests {
@@ -123,14 +122,14 @@ func Test_Header_get(t *testing.T) {
 
 	t.Run("get from beresp", func(t *testing.T) {
 		tests := []struct {
-			name    value.Value
+			name    string
 			expect  string
 			isError bool
 		}{
-			{name: &value.String{Value: "X-Custom-Header"}, expect: "value"},
-			{name: &value.String{Value: "X-Not-Found"}, expect: ""},
-			{name: &value.String{Value: "OBJECT:foo"}, expect: "valuefoo"},
-			{name: &value.String{Value: "OBJECT:baz"}, expect: ""},
+			{name: "X-Custom-Header", expect: "value"},
+			{name: "X-Not-Found", expect: ""},
+			{name: "OBJECT:foo", expect: "valuefoo"},
+			{name: "OBJECT:baz", expect: ""},
 		}
 
 		for i, tt := range tests {
@@ -161,14 +160,14 @@ func Test_Header_get(t *testing.T) {
 
 	t.Run("get from obj", func(t *testing.T) {
 		tests := []struct {
-			name    value.Value
+			name    string
 			expect  string
 			isError bool
 		}{
-			{name: &value.String{Value: "X-Custom-Header"}, expect: "value"},
-			{name: &value.String{Value: "X-Not-Found"}, expect: ""},
-			{name: &value.String{Value: "OBJECT:foo"}, expect: "valuefoo"},
-			{name: &value.String{Value: "OBJECT:baz"}, expect: ""},
+			{name: "X-Custom-Header", expect: "value"},
+			{name: "X-Not-Found", expect: ""},
+			{name: "OBJECT:foo", expect: "valuefoo"},
+			{name: "OBJECT:baz", expect: ""},
 		}
 
 		for i, tt := range tests {
@@ -199,14 +198,14 @@ func Test_Header_get(t *testing.T) {
 
 	t.Run("get from response", func(t *testing.T) {
 		tests := []struct {
-			name    value.Value
+			name    string
 			expect  string
 			isError bool
 		}{
-			{name: &value.String{Value: "X-Custom-Header"}, expect: "value"},
-			{name: &value.String{Value: "X-Not-Found"}, expect: ""},
-			{name: &value.String{Value: "OBJECT:foo"}, expect: "valuefoo"},
-			{name: &value.String{Value: "OBJECT:baz"}, expect: ""},
+			{name: "X-Custom-Header", expect: "value"},
+			{name: "X-Not-Found", expect: ""},
+			{name: "OBJECT:foo", expect: "valuefoo"},
+			{name: "OBJECT:baz", expect: ""},
 		}
 
 		for i, tt := range tests {
@@ -237,14 +236,14 @@ func Test_Header_get(t *testing.T) {
 
 	t.Run("get from invalid id", func(t *testing.T) {
 		tests := []struct {
-			name    value.Value
+			name    string
 			expect  string
 			isError bool
 		}{
-			{name: &value.String{Value: "X-Custom-Header"}, expect: ""},
-			{name: &value.String{Value: "X-Not-Found"}, expect: ""},
-			{name: &value.String{Value: "OBJECT:foo"}, expect: ""},
-			{name: &value.String{Value: "OBJECT:baz"}, expect: ""},
+			{name: "X-Custom-Header", expect: ""},
+			{name: "X-Not-Found", expect: ""},
+			{name: "OBJECT:foo", expect: ""},
+			{name: "OBJECT:baz", expect: ""},
 		}
 
 		for i, tt := range tests {

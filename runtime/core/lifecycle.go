@@ -48,7 +48,7 @@ func (c *Runtime[T]) Lifecycle(ctx context.Context, r T) error {
 		// TODO: consider lookup cache
 		err = c.lifecycleMiss(ctx, r)
 	default:
-		err = fmt.Errorf("Unexpected state returned: %s", state)
+		err = fmt.Errorf("Unexpected state returned: %s in RECV", state)
 	}
 
 	if err != nil {
@@ -100,7 +100,7 @@ func (c *Runtime[T]) lifecycleMiss(ctx context.Context, r T) error {
 	case vintage.FETCH, vintage.NONE:
 		err = c.lifecycleFetch(ctx, r)
 	default:
-		err = fmt.Errorf("Unexpected state returned: %s", state)
+		err = fmt.Errorf("Unexpected state returned: %s in MISS", state)
 	}
 	if err != nil {
 		return errors.WithStack(err)
@@ -114,7 +114,7 @@ func (c *Runtime[T]) lifecycleHit(ctx context.Context, r T) error {
 }
 
 func (c *Runtime[T]) lifecyclePass(ctx context.Context, r T) error {
-	var state vintage.State = vintage.FETCH
+	var state vintage.State = vintage.PASS
 	var err error
 
 	rh := r.CreateBackendRequest()
@@ -133,7 +133,7 @@ func (c *Runtime[T]) lifecyclePass(ctx context.Context, r T) error {
 	case vintage.ERROR:
 		err = c.lifecycleError(ctx, r)
 	default:
-		err = fmt.Errorf("Unexpected state returned: %s", state)
+		err = fmt.Errorf("Unexpected state returned: %s in PASS", state)
 	}
 	if err != nil {
 		return errors.WithStack(err)
@@ -166,16 +166,10 @@ func (c *Runtime[T]) lifecycleFetch(ctx context.Context, r T) error {
 	case vintage.RESTART:
 		err = c.lifecycleRestart(ctx, r)
 	default:
-		err = fmt.Errorf("Unexpected state returned: %s", state)
+		err = fmt.Errorf("Unexpected state returned: %s in FETCH", state)
 	}
 	if err != nil {
 		return errors.WithStack(err)
-	}
-
-	if rh, err := r.CreateClientResponse(); err != nil {
-		return errors.WithStack(err)
-	} else {
-		c.ResponseHeader = NewHeader(rh)
 	}
 
 	return nil
@@ -207,7 +201,7 @@ func (c *Runtime[T]) lifecycleError(ctx context.Context, r T) error {
 	case vintage.RESTART:
 		err = c.lifecycleRestart(ctx, r)
 	default:
-		err = fmt.Errorf("Unexpected state returned: %s", state)
+		err = fmt.Errorf("Unexpected state returned: %s in ERROR", state)
 	}
 	if err != nil {
 		return errors.WithStack(err)
@@ -218,6 +212,12 @@ func (c *Runtime[T]) lifecycleError(ctx context.Context, r T) error {
 func (c *Runtime[T]) lifecycleDeliver(ctx context.Context, r T) error {
 	var state vintage.State = vintage.LOG
 	var err error
+
+	if rh, err := r.CreateClientResponse(); err != nil {
+		return errors.WithStack(err)
+	} else {
+		c.ResponseHeader = NewHeader(rh)
+	}
 
 	// Time to first bytes is calculated from restart has started to vcl_deliver will call.
 	// https://developer.fastly.com/reference/vcl/variables/client-response/time-to-first-byte/
@@ -237,7 +237,7 @@ func (c *Runtime[T]) lifecycleDeliver(ctx context.Context, r T) error {
 	case vintage.LOG, vintage.DELIVER, vintage.NONE:
 		err = c.lifecycleLog(ctx, r)
 	default:
-		err = fmt.Errorf("Unexpected state returned: %s", state)
+		err = fmt.Errorf("Unexpected state returned: %s in DELIVER", state)
 	}
 	if err != nil {
 		return errors.WithStack(err)

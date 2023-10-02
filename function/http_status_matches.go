@@ -34,7 +34,7 @@ func Http_status_matches[T core.EdgeRuntime](
 	}
 
 	if isMatch {
-		return inverse, nil
+		return !inverse, nil
 	}
-	return !inverse, nil
+	return inverse, nil
 }

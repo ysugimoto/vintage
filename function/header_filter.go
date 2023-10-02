@@ -53,6 +53,11 @@ func Header_filter[T core.EdgeRuntime](
 }
 func header_filter_delete(h *core.Header, names []string) error {
 	for i := range names {
+		if !lib.IsValidHeader(names[i]) {
+			return errors.FunctionError(
+				Header_filter_Name, "Invalid header present: %s", names[i],
+			)
+		}
 		if err := lib.CheckProtectedHeader(names[i]); err != nil {
 			return errors.WithStack(err)
 		}

@@ -45,7 +45,7 @@ func digest_time_hmac_md5(
 	}
 
 	key := base32.StdEncoding.EncodeToString(dec)
-	pass, err := totp.GenerateCodeCustom(key, time.Now(), totp.ValidateOpts{
+	pass, err := totp.GenerateCodeCustom(key, baseTime, totp.ValidateOpts{
 		Period:    uint(interval),
 		Digits:    otp.DigitsSix,
 		Algorithm: otp.AlgorithmMD5,

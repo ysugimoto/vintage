@@ -17,11 +17,7 @@ func Accept_language_lookup[T core.EdgeRuntime](
 	lookup, defaultValue, language string,
 ) (string, error) {
 
-	var languages []string
-	for _, v := range strings.Split(lookup, ":") {
-		languages = append(languages, v)
-	}
-
+	languages := append([]string{}, strings.Split(lookup, ":")...)
 	index := len(languages)
 	for _, v := range strings.Split(language, ",") {
 		v = strings.TrimSpace(v)

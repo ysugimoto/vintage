@@ -52,16 +52,19 @@ func (r *Runtime) Execute(ctx context.Context) error {
 	if err := r.Lifecycle(ctx, r); err != nil {
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 
 func (r *Runtime) Proxy(ctx context.Context, backend *vintage.Backend) (vintage.RawHeader, error) {
+	fmt.Printf("Proxy request send to %s\n", backend.Backend())
 	resp, err := r.Request.Send(ctx, backend.Backend())
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	fmt.Printf("Proxy request responds status code %d\n", resp.StatusCode)
 
-	r.Response = resp
+	r.BackendResponse = resp
 	return vintage.RawHeader(resp.Header), nil
 }
 
@@ -96,6 +99,10 @@ func (r *Runtime) CreateBackendRequest() vintage.RawHeader {
 
 func (r *Runtime) CreateClientResponse() (vintage.RawHeader, error) {
 	beresp := r.BackendResponse
+
+	if beresp == nil {
+		fmt.Println("backend response is null")
+	}
 
 	// Read and rewind backend response
 	var body bytes.Buffer

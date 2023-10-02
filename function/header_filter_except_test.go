@@ -26,7 +26,7 @@ func Test_Header_filter_except(t *testing.T) {
 		for i, tt := range tests {
 			ctx := newTestRuntime()
 			ctx.RequestHeader = core.NewHeader(map[string][]string{
-				"Fastly-FF":           {"test"},
+				"Fastly-Ff":           {"test"},
 				"X-Custom-Header":     {"value"},
 				"X-Additional-Header": {"value"},
 			})
@@ -45,7 +45,7 @@ func Test_Header_filter_except(t *testing.T) {
 			actual := ctx.RequestHeader.Get("X-Custom-Header")
 			if tt.isExepcted {
 				if actual == "" {
-					t.Errorf("[%d] Could not be excepted header", i)
+					t.Errorf("[%d] Could not find excepted header", i)
 				}
 			} else {
 				if actual != "" {
@@ -53,7 +53,7 @@ func Test_Header_filter_except(t *testing.T) {
 				}
 			}
 
-			if ctx.ResponseHeader.Get("Fastly-FF") == "" {
+			if ctx.RequestHeader.Get("Fastly-FF") == "" {
 				t.Errorf("[%d] Protected header must not be removed", i)
 			}
 		}
@@ -73,7 +73,7 @@ func Test_Header_filter_except(t *testing.T) {
 		for i, tt := range tests {
 			ctx := newTestRuntime()
 			ctx.BackendRequestHeader = core.NewHeader(map[string][]string{
-				"Fastly-FF":           {"test"},
+				"Fastly-Ff":           {"test"},
 				"X-Custom-Header":     {"value"},
 				"X-Additional-Header": {"value"},
 			})
@@ -89,7 +89,7 @@ func Test_Header_filter_except(t *testing.T) {
 				t.Errorf("[%d] Header_filter_except should not error but non-nil: %s", i, err)
 			}
 
-			actual := ctx.RequestHeader.Get("X-Custom-Header")
+			actual := ctx.BackendRequestHeader.Get("X-Custom-Header")
 			if tt.isExepcted {
 				if actual == "" {
 					t.Errorf("[%d] Could not be excepted header", i)
@@ -100,7 +100,7 @@ func Test_Header_filter_except(t *testing.T) {
 				}
 			}
 
-			if ctx.ResponseHeader.Get("Fastly-FF") == "" {
+			if ctx.BackendRequestHeader.Get("Fastly-FF") == "" {
 				t.Errorf("[%d] Protected header must not be removed", i)
 			}
 		}
@@ -120,7 +120,7 @@ func Test_Header_filter_except(t *testing.T) {
 		for i, tt := range tests {
 			ctx := newTestRuntime()
 			ctx.BackendResponseHeader = core.NewHeader(map[string][]string{
-				"Fastly-FF":           {"test"},
+				"Fastly-Ff":           {"test"},
 				"X-Custom-Header":     {"value"},
 				"X-Additional-Header": {"value"},
 			})
@@ -136,7 +136,7 @@ func Test_Header_filter_except(t *testing.T) {
 				t.Errorf("[%d] Header_filter_except should not error but non-nil: %s", i, err)
 			}
 
-			actual := ctx.RequestHeader.Get("X-Custom-Header")
+			actual := ctx.BackendResponseHeader.Get("X-Custom-Header")
 			if tt.isExepcted {
 				if actual == "" {
 					t.Errorf("[%d] Could not be excepted header", i)
@@ -147,7 +147,7 @@ func Test_Header_filter_except(t *testing.T) {
 				}
 			}
 
-			if ctx.ResponseHeader.Get("Fastly-FF") == "" {
+			if ctx.BackendResponseHeader.Get("Fastly-FF") == "" {
 				t.Errorf("[%d] Protected header must not be removed", i)
 			}
 		}
@@ -167,7 +167,7 @@ func Test_Header_filter_except(t *testing.T) {
 		for i, tt := range tests {
 			ctx := newTestRuntime()
 			ctx.BackendResponseHeader = core.NewHeader(map[string][]string{
-				"Fastly-FF":           {"test"},
+				"Fastly-Ff":           {"test"},
 				"X-Custom-Header":     {"value"},
 				"X-Additional-Header": {"value"},
 			})
@@ -183,7 +183,7 @@ func Test_Header_filter_except(t *testing.T) {
 				t.Errorf("[%d] Header_filter_except should not error but non-nil: %s", i, err)
 			}
 
-			actual := ctx.RequestHeader.Get("X-Custom-Header")
+			actual := ctx.BackendResponseHeader.Get("X-Custom-Header")
 			if tt.isExepcted {
 				if actual == "" {
 					t.Errorf("[%d] Could not be excepted header", i)
@@ -194,7 +194,7 @@ func Test_Header_filter_except(t *testing.T) {
 				}
 			}
 
-			if ctx.ResponseHeader.Get("Fastly-FF") == "" {
+			if ctx.BackendResponseHeader.Get("Fastly-FF") == "" {
 				t.Errorf("[%d] Protected header must not be removed", i)
 			}
 		}
@@ -214,7 +214,7 @@ func Test_Header_filter_except(t *testing.T) {
 		for i, tt := range tests {
 			ctx := newTestRuntime()
 			ctx.ResponseHeader = core.NewHeader(map[string][]string{
-				"Fastly-FF":           {"test"},
+				"Fastly-Ff":           {"test"},
 				"X-Custom-Header":     {"value"},
 				"X-Additional-Header": {"value"},
 			})
@@ -230,7 +230,7 @@ func Test_Header_filter_except(t *testing.T) {
 				t.Errorf("[%d] Header_filter_except should not error but non-nil: %s", i, err)
 			}
 
-			actual := ctx.RequestHeader.Get("X-Custom-Header")
+			actual := ctx.ResponseHeader.Get("X-Custom-Header")
 			if tt.isExepcted {
 				if actual == "" {
 					t.Errorf("[%d] Could not be excepted header", i)

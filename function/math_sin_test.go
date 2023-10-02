@@ -42,7 +42,7 @@ func Test_Math_sin(t *testing.T) {
 				t.Errorf("[%d] Return value unmatch, diff: %s", i, diff)
 			}
 		}
-		if diff := cmp.Diff(ctx.FastlyError, tt.expect); diff != "" {
+		if diff := cmp.Diff(ctx.FastlyError, tt.err); diff != "" {
 			t.Errorf("[%d] Error string unmatch, diff: %s", i, diff)
 		}
 	}

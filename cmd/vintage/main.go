@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ysugimoto/falco/resolver"
+	"github.com/ysugimoto/vintage/transformer/fastly"
 )
 
 func main() {
@@ -11,9 +12,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	buf, err := transformer.New(rslv).Transform()
+	buf, err := fastly.NewFastlyTransformer().Transform(rslv[0])
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(buf.String())
+	fmt.Println(string(buf))
 }

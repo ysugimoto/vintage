@@ -61,13 +61,10 @@ func (tf *CoreTransformer) transformBackend(backend *ast.BackendDeclaration) ([]
 		case "ssl":
 			buf.WriteString(fmt.Sprintf(`vintage.BackendSSL(%s),`+lineFeed, toString(prop.Value)))
 		case "connect_timeout":
-			tf.Packages.Add("time", "")
 			buf.WriteString(fmt.Sprintf(`vintage.BackendConnectTimeout(%s),`+lineFeed, toString(prop.Value)))
 		case "first_byte_timeout":
-			tf.Packages.Add("time", "")
 			buf.WriteString(fmt.Sprintf(`vintage.BackendFirstByteTimeout(%s),`+lineFeed, toString(prop.Value)))
 		case "between_bytes_timeout":
-			tf.Packages.Add("time", "")
 			buf.WriteString(fmt.Sprintf(`vintage.BackendBetweenBytesTimeout(%s),`+lineFeed, toString(prop.Value)))
 		}
 	}
@@ -150,6 +147,7 @@ func (tf *CoreTransformer) transformSubroutine(sub *ast.SubroutineDeclaration) (
 			value.GoTypeString(value.VCLType(sub.ReturnType.Value)),
 		))
 		buf.WriteString("re := vintage.RegexpMatchedGroup{}" + lineFeed)
+		buf.WriteString("defer re.Release()" + lineFeed)
 		buf.WriteString(lineFeed)
 		inside, _, err := tf.transformBlockStatement(sub.Block.Statements)
 		if err != nil {
@@ -168,6 +166,7 @@ func (tf *CoreTransformer) transformSubroutine(sub *ast.SubroutineDeclaration) (
 		tf.runtimeName,
 	))
 	buf.WriteString("re := vintage.RegexpMatchedGroup{}" + lineFeed)
+	buf.WriteString("defer re.Release()" + lineFeed)
 	buf.WriteString(lineFeed)
 	inside, rs, err := tf.transformBlockStatement(sub.Block.Statements)
 	if err != nil {

@@ -82,3 +82,7 @@ func (re RegexpMatchedGroup) At(index int) string {
 	}
 	return re[index]
 }
+
+func (re RegexpMatchedGroup) Release() {
+	re = []string{}
+}

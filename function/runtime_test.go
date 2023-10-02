@@ -7,7 +7,7 @@ import (
 	"github.com/ysugimoto/vintage/runtime/core"
 )
 
-// testRuntime uses for builtin function testings.
+// TestRuntime uses for builtin function testings.
 // Implements EdgeRuntime interface but returns fake values.
 type TestRuntime struct {
 	*core.Runtime[*TestRuntime]
@@ -20,6 +20,7 @@ func newTestRuntime() *core.Runtime[*TestRuntime] {
 	return rt.Runtime
 }
 
+// Fake implementation of EdgeRuntime interface
 func (r *TestRuntime) CreateBackendRequest() vintage.RawHeader {
 	return vintage.RawHeader(map[string][]string{})
 }

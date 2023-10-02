@@ -1,11 +1,8 @@
 package function
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/hex"
-	"io"
-	"strings"
 
 	"github.com/ysugimoto/vintage/errors"
 	"github.com/ysugimoto/vintage/runtime/core"
@@ -22,18 +19,15 @@ func Bin_hex_to_base64[T core.EdgeRuntime](
 	input string,
 ) (string, error) {
 
-	var buf bytes.Buffer
-	if _, err := io.Copy(
-		base64.NewEncoder(base64.StdEncoding, &buf),
-		hex.NewDecoder(strings.NewReader(input)),
-	); err != nil {
+	dec, err := hex.DecodeString(input)
+	if err != nil {
 		// If the hex string s is not valid, then fastly.error will be set to EINVAL.
 		ctx.FastlyError = "EINVAL"
 		return "", errors.FunctionError(
 			Bin_hex_to_base64_Name,
-			"Failed to decode hex string / encode to base64 string",
+			"Failed to decode hex string: %w", err,
 		)
 	}
 
-	return buf.String(), nil
+	return base64.StdEncoding.EncodeToString(dec), nil
 }

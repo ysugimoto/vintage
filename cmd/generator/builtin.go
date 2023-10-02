@@ -2,9 +2,7 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"go/format"
-	"io/ioutil"
 	"os"
 	"sort"
 	"strings"
@@ -108,8 +106,6 @@ func generateBuiltinFunctionScript() error {
 
 	ret, err := format.Source(out.Bytes())
 	if err != nil {
-		fmt.Println(out.String())
-		ioutil.WriteFile("./result.go", out.Bytes(), 0644)
 		return err
 	}
 	f, err := os.OpenFile("../../transformer/core/builtin_functions.go", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)

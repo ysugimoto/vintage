@@ -310,9 +310,13 @@ func (tf *CoreTransformer) transformCallStatement(stmt *ast.CallStatement) ([]by
 	var buf bytes.Buffer
 
 	tmp := value.Temporary()
-	buf.WriteString(fmt.Sprintf("%s, err := %s(ctx)"+lineFeed, tmp, stmt.Subroutine.Value))
-	buf.WriteString(value.ErrorCheck + lineFeed)
-	buf.WriteString(fmt.Sprintf("if %s != vintage.NONE {\nreturn %s, nil\n}", tmp, tmp))
+	buf.WriteString(strings.Join([]string{
+		fmt.Sprintf("if %s, err := %s(ctx); err != nil {", tmp, stmt.Subroutine.Value),
+		"return vintage.NONE, err",
+		fmt.Sprintf("} else if %s != vintage.NONE {", tmp),
+		fmt.Sprintf("return %s, nil", tmp),
+		"}",
+	}, lineFeed))
 
 	return buf.Bytes(), nil
 }
@@ -423,11 +427,12 @@ func (tf *CoreTransformer) transformFunctionCallStatement(stmt *ast.FunctionCall
 func (tf *CoreTransformer) transformIfStatement(stmt *ast.IfStatement) ([]byte, error) {
 	var buf bytes.Buffer
 
+	var prepares []byte
 	condition, err := tf.transformExpression(value.BOOL, stmt.Condition)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	buf.WriteString(condition.Prepare)
+	prepares = append(prepares, []byte(condition.Prepare)...)
 	buf.WriteString(fmt.Sprintf("if %s {"+lineFeed, condition.String()))
 	consequence, _, err := tf.transformBlockStatement(stmt.Consequence.Statements)
 	if err != nil {
@@ -436,31 +441,23 @@ func (tf *CoreTransformer) transformIfStatement(stmt *ast.IfStatement) ([]byte, 
 	buf.Write(consequence)
 	buf.WriteString("}")
 
-	if len(stmt.Another) > 0 {
-		buf.WriteString(lineFeed)
-	}
-
-	for i, elseif := range stmt.Another {
+	for _, elseif := range stmt.Another {
 		condition, err := tf.transformExpression(value.BOOL, elseif.Condition)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		buf.WriteString(condition.Prepare)
-		buf.WriteString(fmt.Sprintf("else if %s {"+lineFeed, condition.String()))
+		prepares = append(prepares, []byte(condition.Prepare)...)
+		buf.WriteString(fmt.Sprintf(" else if %s {"+lineFeed, condition.String()))
 		consequence, _, err := tf.transformBlockStatement(elseif.Consequence.Statements)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 		buf.Write(consequence)
 		buf.WriteString("}")
-		if i < len(stmt.Another)-1 {
-			buf.WriteString(lineFeed)
-		}
 	}
 
 	if stmt.Alternative != nil {
-		buf.WriteString(lineFeed)
-		buf.WriteString("else {" + lineFeed)
+		buf.WriteString(" else {" + lineFeed)
 		alternative, _, err := tf.transformBlockStatement(stmt.Alternative.Statements)
 		if err != nil {
 			return nil, errors.WithStack(err)
@@ -469,5 +466,5 @@ func (tf *CoreTransformer) transformIfStatement(stmt *ast.IfStatement) ([]byte, 
 		buf.WriteString("}")
 	}
 
-	return buf.Bytes(), nil
+	return append(prepares, buf.Bytes()...), nil
 }
