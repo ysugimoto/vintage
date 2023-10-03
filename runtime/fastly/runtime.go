@@ -58,7 +58,7 @@ func (r *Runtime) Execute(ctx context.Context) error {
 
 func (r *Runtime) Proxy(ctx context.Context, backend *vintage.Backend) (vintage.RawHeader, error) {
 	fmt.Printf("Proxy request send to %s\n", backend.Backend())
-	resp, err := r.Request.Send(ctx, backend.Backend())
+	resp, err := r.BackendRequest.Send(ctx, backend.Backend())
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
