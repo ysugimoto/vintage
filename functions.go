@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"regexp"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -52,18 +51,6 @@ func ToBool[T Primitive](v T) bool {
 	return false
 }
 
-func TernaryOperator[T Primitive](cond bool, consequence, alternative T) T {
-	if cond {
-		return consequence
-	}
-	return alternative
-}
-
-func RegexpMatchOperator(pattern, subject string) bool {
-	match, _ := regexp.MatchString(pattern, subject)
-	return match
-}
-
 // We heavily respect original implementation of github.com/rs/xid.
 // This function picks functions only we need
 // because original imports some of unsupported package on the WASM environment.
@@ -81,7 +68,7 @@ func GenerateXid() string {
 	// WASM runtime will not have any machine id so id is always generated as random bytes
 	// This line comes from readPlatformMachineID on https://github.com/rs/xid/blob/master/id.go#L110
 	machineId := make([]byte, 3)
-	rand.Reader.Read(machineId)
+	rand.Reader.Read(machineId) // nolint:errcheck
 
 	pid := os.Getpid()
 
@@ -128,5 +115,4 @@ func GenerateXid() string {
 	dst[0] = xidEncoding[id[0]>>3]
 
 	return string(dst)
-
 }

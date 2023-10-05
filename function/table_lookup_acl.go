@@ -18,6 +18,7 @@ func Table_lookup_acl[T core.EdgeRuntime](
 	key string,
 	defaultAcl *vintage.Acl,
 ) (*vintage.Acl, error) {
+
 	table, ok := ctx.Tables[id]
 	if !ok {
 		return nil, errors.FunctionError(

@@ -18,6 +18,7 @@ func Http_status_matches[T core.EdgeRuntime](
 	status int64,
 	format string,
 ) (bool, error) {
+
 	var inverse bool
 	if format[0] == 0x21 { // prefixed with "!"
 		inverse = true

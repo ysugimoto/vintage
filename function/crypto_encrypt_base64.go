@@ -19,6 +19,7 @@ func Crypto_encrypt_base64[T core.EdgeRuntime](
 	cipherId, mode, padding string, // IDENT
 	key, iv, text string,
 ) (string, error) {
+
 	buf, err := base64.StdEncoding.DecodeString(text)
 	if err != nil {
 		return "", errors.FunctionError(

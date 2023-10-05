@@ -16,6 +16,7 @@ func Table_contains[T core.EdgeRuntime](
 	id string, // IDENT
 	key string,
 ) (bool, error) {
+
 	table, ok := ctx.Tables[id]
 	if !ok {
 		return false, errors.FunctionError(

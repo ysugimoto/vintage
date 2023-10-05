@@ -19,11 +19,12 @@ func Std_itoa[T core.EdgeRuntime](
 	input int64,
 	optional ...int64,
 ) (string, error) {
+
 	var base int64 = 10
 	if len(optional) > 0 {
 		base = optional[0]
 		if base < 2 || base > 36 {
-			ctx.FastlyError = "EINVAL"
+			ctx.FastlyError = ErrEINVAL
 			return "", errors.FunctionError(
 				Std_itoa_Name, "Invalid base value: %d", base,
 			)

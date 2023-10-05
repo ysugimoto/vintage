@@ -16,6 +16,7 @@ func Header_unset[T core.EdgeRuntime](
 	where string, // IDENT
 	name string,
 ) error {
+
 	if !lib.IsValidHeader(name) {
 		return nil
 	}
@@ -24,19 +25,19 @@ func Header_unset[T core.EdgeRuntime](
 	}
 
 	switch where {
-	case "req":
+	case REQ:
 		if ctx.RequestHeader != nil {
 			ctx.RequestHeader.Unset(name)
 		}
-	case "resp":
+	case RESP:
 		if ctx.ResponseHeader != nil {
 			ctx.ResponseHeader.Unset(name)
 		}
-	case "obj", "beresp":
+	case OBJ, BERESP:
 		if ctx.BackendResponseHeader != nil {
 			ctx.BackendResponseHeader.Unset(name)
 		}
-	case "bereq":
+	case BEREQ:
 		if ctx.BackendRequestHeader != nil {
 			ctx.BackendRequestHeader.Unset(name)
 		}

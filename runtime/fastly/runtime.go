@@ -101,7 +101,9 @@ func (r *Runtime) CreateClientResponse() (vintage.RawHeader, error) {
 	beresp := r.BackendResponse
 
 	if beresp == nil {
-		fmt.Println("backend response is null")
+		return nil, errors.WithStack(
+			fmt.Errorf("BackendResponse have not created yet"),
+		)
 	}
 
 	// Read and rewind backend response
@@ -136,5 +138,4 @@ func (r *Runtime) CreateObjectResponse(statusCode int, response string) (vintage
 	}
 
 	return vintage.RawHeader(r.BackendResponse.Header), nil
-
 }

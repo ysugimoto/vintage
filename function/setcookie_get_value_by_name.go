@@ -16,6 +16,7 @@ func Setcookie_get_value_by_name[T core.EdgeRuntime](
 	where string, // IDENT
 	name string,
 ) (string, error) {
+
 	switch where {
 	case "beresp":
 		if ctx.BackendResponseHeader == nil {

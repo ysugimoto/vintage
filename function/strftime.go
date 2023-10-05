@@ -35,11 +35,13 @@ var Strftime_weeks = map[string]int{
 // Arguments may be:
 // - STRING, TIME
 // Reference: https://developer.fastly.com/reference/vcl/functions/date-and-time/strftime/
+// nolint:funlen,gocognit,gocyclo,ineffassign
 func Strftime[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	format string,
 	t time.Time,
 ) (string, error) {
+
 	var formatted string
 	for i := 0; i < len(format); i++ {
 		v := format[i]

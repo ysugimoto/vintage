@@ -14,6 +14,7 @@ const Uuid_version4_Name = "uuid.version4"
 func Uuid_version4[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 ) (string, error) {
+
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return "", errors.FunctionError(

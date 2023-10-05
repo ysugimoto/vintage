@@ -18,6 +18,7 @@ func Utf8_substr[T core.EdgeRuntime](
 	offset int64,
 	optional ...int64,
 ) (string, error) {
+
 	var length *int64
 	if len(optional) > 0 {
 		length = &optional[0]
@@ -30,15 +31,17 @@ func Utf8_substr[T core.EdgeRuntime](
 	} else {
 		start = int(offset)
 	}
-	if length == nil {
+
+	switch {
+	case length == nil:
 		end = len(input)
-	} else if *length < 0 {
+	case *length < 0:
 		if offset < 0 {
 			end = len(input) + int(*length) + 1
 		} else {
 			end = len(input) + int(*length)
 		}
-	} else {
+	default:
 		if offset < 0 {
 			end = start + int(*length)
 		} else {

@@ -16,5 +16,6 @@ func Std_ip2str[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input net.IP,
 ) (string, error) {
+
 	return input.String(), nil
 }

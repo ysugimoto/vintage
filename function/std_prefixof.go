@@ -16,5 +16,6 @@ func Std_prefixof[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	val, beginsWith string,
 ) (bool, error) {
+
 	return strings.HasPrefix(val, beginsWith), nil
 }

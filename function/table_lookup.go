@@ -18,6 +18,7 @@ func Table_lookup[T core.EdgeRuntime](
 	key string,
 	optional ...string,
 ) (string, error) {
+
 	var defaultValue string
 	if len(optional) > 0 {
 		defaultValue = optional[0]

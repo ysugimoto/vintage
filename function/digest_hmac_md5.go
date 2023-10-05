@@ -18,8 +18,8 @@ func Digest_hmac_md5[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	key, text string,
 ) (string, error) {
+
 	mac := hmac.New(md5.New, []byte(key))
 	mac.Write([]byte(text))
-
 	return hex.EncodeToString(mac.Sum(nil)), nil
 }

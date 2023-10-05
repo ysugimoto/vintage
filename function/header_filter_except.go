@@ -19,6 +19,7 @@ func Header_filter_except[T core.EdgeRuntime](
 	where string, // IDENT
 	headers ...string,
 ) error {
+
 	filter := make(map[string]struct{})
 	for i := 0; i < len(headers); i++ {
 		if !lib.IsValidHeader(headers[i]) {
@@ -31,19 +32,19 @@ func Header_filter_except[T core.EdgeRuntime](
 	}
 
 	switch where {
-	case "req":
+	case REQ:
 		if ctx.RequestHeader != nil {
 			header_filter_except_delete(ctx.RequestHeader, filter)
 		}
-	case "resp":
+	case RESP:
 		if ctx.ResponseHeader != nil {
 			header_filter_except_delete(ctx.ResponseHeader, filter)
 		}
-	case "obj", "beresp":
+	case OBJ, BERESP:
 		if ctx.BackendResponseHeader != nil {
 			header_filter_except_delete(ctx.BackendResponseHeader, filter)
 		}
-	case "bereq":
+	case BEREQ:
 		if ctx.BackendRequestHeader != nil {
 			header_filter_except_delete(ctx.BackendRequestHeader, filter)
 		}

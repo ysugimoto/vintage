@@ -40,6 +40,8 @@ func GoTypeString(t VCLType) string {
 	return ""
 }
 
+const NIL = "nil"
+
 func DefaultValue(t VCLType) string {
 	switch t {
 	case INTEGER:
@@ -51,15 +53,15 @@ func DefaultValue(t VCLType) string {
 	case BOOL:
 		return "false"
 	case IP:
-		return "nil"
+		return NIL
 	case RTIME:
 		return "time.Duration(0)"
 	case TIME:
 		return "time.Time{}"
 	case BACKEND:
-		return "nil"
+		return NIL
 	case ACL:
-		return "nil"
+		return NIL
 	}
 	return ""
 }

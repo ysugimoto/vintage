@@ -16,5 +16,6 @@ func Std_tolower[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	val string,
 ) (string, error) {
+
 	return strings.ToLower(val), nil
 }

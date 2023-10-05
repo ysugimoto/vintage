@@ -15,6 +15,7 @@ func Std_count[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	headers string, // IDENT
 ) (int64, error) {
+
 	switch headers {
 	case "req.headers":
 		return int64(len(ctx.RequestHeader.MH)), nil

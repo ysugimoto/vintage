@@ -16,5 +16,6 @@ func Digest_base64url_nopad[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input string,
 ) (string, error) {
+
 	return base64.RawURLEncoding.EncodeToString([]byte(input)), nil
 }

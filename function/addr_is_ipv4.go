@@ -18,6 +18,7 @@ func Addr_is_ipv4[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	ip net.IP,
 ) (bool, error) {
+
 	addr, err := netip.ParseAddr(ip.String())
 	if err != nil {
 		return false, errors.FunctionError(

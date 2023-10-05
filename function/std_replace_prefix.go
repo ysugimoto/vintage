@@ -16,6 +16,7 @@ func Std_replace_prefix[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input, target, replacement string,
 ) (string, error) {
+
 	if strings.HasPrefix(input, target) {
 		input = replacement + strings.TrimPrefix(input, target)
 	}

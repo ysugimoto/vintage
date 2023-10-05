@@ -17,6 +17,7 @@ func Std_basename[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	val string,
 ) (string, error) {
+
 	switch val {
 	case ".", "":
 		return ".", nil

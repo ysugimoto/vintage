@@ -108,6 +108,7 @@ func (c *Runtime[T]) lifecycleMiss(ctx context.Context, r T) error {
 	return nil
 }
 
+// nolint:unused
 func (c *Runtime[T]) lifecycleHit(ctx context.Context, r T) error {
 	// TODO: nothing to do because Edge runtime does have caching behavior on its runtime
 	return nil
@@ -179,7 +180,7 @@ func (c *Runtime[T]) lifecycleError(ctx context.Context, r T) error {
 	var state vintage.State = vintage.DELIVER
 	var err error
 
-	// Possibillity response object is nil, then need to construct via runtime
+	// Possibility response object is nil, then need to construct via runtime
 	if c.BackendResponseHeader == nil {
 		if rh, err := r.CreateObjectResponse(int(c.ObjectStatus), c.ObjectResponse); err != nil {
 			return errors.WithStack(err)
@@ -246,7 +247,6 @@ func (c *Runtime[T]) lifecycleDeliver(ctx context.Context, r T) error {
 }
 
 func (c *Runtime[T]) lifecycleLog(ctx context.Context, r T) error {
-
 	var err error
 	c.ResponseHeaderBytesWritten, c.ResponseBodyBytesWritten, c.ResponseBytesWritten, err = r.WriteResponse()
 	if err != nil {

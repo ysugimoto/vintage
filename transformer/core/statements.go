@@ -22,7 +22,7 @@ func (tf *CoreTransformer) transformBlockStatement(statements []ast.Statement) (
 		case *ast.DeclareStatement:
 			code, err = tf.transformDeclareStatement(s)
 		case *ast.ReturnStatement:
-			code, err = tf.transformReturnStatement(s)
+			code = tf.transformReturnStatement(s)
 			returnExists = true
 		case *ast.SetStatement:
 			code, err = tf.transformSetStatement(s)
@@ -39,7 +39,7 @@ func (tf *CoreTransformer) transformBlockStatement(statements []ast.Statement) (
 		case *ast.SyntheticBase64Statement:
 			code, err = tf.transformSyntheticBase64Statement(s)
 		case *ast.CallStatement:
-			code, err = tf.transformCallStatement(s)
+			code = tf.transformCallStatement(s)
 		case *ast.RestartStatement:
 			code, err = tf.transformRestartStatement(s)
 		case *ast.ErrorStatement:
@@ -103,12 +103,12 @@ func (tf *CoreTransformer) transformDeclareStatement(stmt *ast.DeclareStatement)
 	return buf.Bytes(), nil
 }
 
-func (tf *CoreTransformer) transformReturnStatement(stmt *ast.ReturnStatement) ([]byte, error) {
+func (tf *CoreTransformer) transformReturnStatement(stmt *ast.ReturnStatement) []byte {
 	state := "NONE"
 	if stmt.ReturnExpression != nil {
 		state = strings.ToUpper(strings.Trim(toString(*stmt.ReturnExpression), `"`))
 	}
-	return []byte(fmt.Sprintf("return vintage.%s, nil", state)), nil
+	return []byte(fmt.Sprintf("return vintage.%s, nil", state))
 }
 
 func (tf *CoreTransformer) transformSetStatement(stmt *ast.SetStatement) ([]byte, error) {
@@ -306,7 +306,7 @@ func (tf *CoreTransformer) transformSyntheticBase64Statement(stmt *ast.Synthetic
 	return buf.Bytes(), nil
 }
 
-func (tf *CoreTransformer) transformCallStatement(stmt *ast.CallStatement) ([]byte, error) {
+func (tf *CoreTransformer) transformCallStatement(stmt *ast.CallStatement) []byte {
 	var buf bytes.Buffer
 
 	tmp := value.Temporary()
@@ -318,15 +318,12 @@ func (tf *CoreTransformer) transformCallStatement(stmt *ast.CallStatement) ([]by
 		"}",
 	}, lineFeed))
 
-	return buf.Bytes(), nil
+	return buf.Bytes()
 }
 
+// nolint:unparam // stmt may be used for a foture implementation
 func (tf *CoreTransformer) transformRestartStatement(stmt *ast.RestartStatement) ([]byte, error) {
-	var buf bytes.Buffer
-
-	buf.WriteString("return vintage.RESTART, nil")
-
-	return buf.Bytes(), nil
+	return []byte("return vintage.RESTART, nil"), nil
 }
 
 func (tf *CoreTransformer) transformErrorStatement(stmt *ast.ErrorStatement) ([]byte, error) {
@@ -348,9 +345,9 @@ func (tf *CoreTransformer) transformErrorStatement(stmt *ast.ErrorStatement) ([]
 
 	buf.WriteString("return vintage.ERROR, nil")
 	return buf.Bytes(), nil
-
 }
 
+// nolint:unparam // stmt may be used for a foture implementation
 func (tf *CoreTransformer) transformEsiStatement(stmt *ast.EsiStatement) ([]byte, error) {
 	// Nothing to do for ESI
 	return []byte("// Trimmed esi statement"), nil

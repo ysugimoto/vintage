@@ -269,7 +269,7 @@ func (r *Runtime) SetURL(req *fsthttp.Request, dst *url.URL) {
 // Used for beresp.response and resp.response setting
 func (r *Runtime) SetResponseBody(resp *fsthttp.Response, body string) {
 	// Explicitly discard old response
-	_, _ = io.ReadAll(resp.Body)
+	_, _ = io.ReadAll(resp.Body) // nolint:errcheck
 
 	resp.Body = io.NopCloser(strings.NewReader(body))
 }

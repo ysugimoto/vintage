@@ -19,6 +19,7 @@ func Table_lookup_ip[T core.EdgeRuntime](
 	key string,
 	defaultValue net.IP,
 ) (net.IP, error) {
+
 	table, ok := ctx.Tables[id]
 	if !ok {
 		return defaultValue, errors.FunctionError(

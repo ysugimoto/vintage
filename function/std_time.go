@@ -27,6 +27,7 @@ func Std_time[T core.EdgeRuntime](
 	input string,
 	fallback time.Time,
 ) (time.Time, error) {
+
 	var t time.Time
 	var err error
 	for _, format := range Std_time_SupportFormats {

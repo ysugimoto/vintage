@@ -19,6 +19,7 @@ func Digest_hash_sha1_from_base64[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input string,
 ) (string, error) {
+
 	decoded, err := base64.StdEncoding.DecodeString(input)
 	if err != nil {
 		return "", errors.FunctionError(

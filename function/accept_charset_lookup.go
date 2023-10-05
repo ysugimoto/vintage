@@ -16,11 +16,8 @@ func Accept_charset_lookup[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	requestedCharsets, defaultValue, acceptHeader string,
 ) (string, error) {
-	var charsets []string
-	for _, v := range strings.Split(requestedCharsets, ":") {
-		charsets = append(charsets, v)
-	}
 
+	charsets := strings.Split(requestedCharsets, ":")
 	index := len(charsets)
 	for _, v := range strings.Split(acceptHeader, ",") {
 		v = strings.TrimSpace(v)

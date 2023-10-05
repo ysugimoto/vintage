@@ -22,7 +22,7 @@ func Bin_hex_to_base64[T core.EdgeRuntime](
 	dec, err := hex.DecodeString(input)
 	if err != nil {
 		// If the hex string s is not valid, then fastly.error will be set to EINVAL.
-		ctx.FastlyError = "EINVAL"
+		ctx.FastlyError = ErrEINVAL
 		return "", errors.FunctionError(
 			Bin_hex_to_base64_Name,
 			"Failed to decode hex string: %w", err,

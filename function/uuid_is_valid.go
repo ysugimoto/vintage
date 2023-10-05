@@ -15,6 +15,7 @@ func Uuid_is_valid[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input string,
 ) (bool, error) {
+
 	if _, err := uuid.Parse(input); err != nil {
 		return false, nil
 	}

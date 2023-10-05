@@ -16,6 +16,7 @@ func Std_strstr[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	haystack, needle string,
 ) (string, error) {
+
 	idx := strings.Index(haystack, needle)
 	if idx == -1 {
 		return "", nil

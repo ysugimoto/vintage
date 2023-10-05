@@ -61,9 +61,11 @@ type RawHeader map[string][]string
 
 // RegexpMatchedGroup represents regexp matched group values
 // which is stored when "~" or "!~" operator is used
-type RegexpMatchedGroup []string
+type RegexpMatchedGroup struct {
+	matches []string
+}
 
-func (re RegexpMatchedGroup) Match(pattern, subject string) (bool, error) {
+func (re *RegexpMatchedGroup) Match(pattern, subject string) (bool, error) {
 	r, err := regexp.Compile(pattern)
 	if err != nil {
 		return false, errors.WithStack(err)
@@ -72,17 +74,17 @@ func (re RegexpMatchedGroup) Match(pattern, subject string) (bool, error) {
 	if matches == nil {
 		return false, nil
 	}
-	re = matches
+	re.matches = matches
 	return true, nil
 }
 
-func (re RegexpMatchedGroup) At(index int) string {
-	if index >= len(re)-1 || index < 0 {
+func (re *RegexpMatchedGroup) At(index int) string {
+	if index >= len(re.matches)-1 || index < 0 {
 		return ""
 	}
-	return re[index]
+	return re.matches[index]
 }
 
-func (re RegexpMatchedGroup) Release() {
-	re = []string{}
+func (re *RegexpMatchedGroup) Release() {
+	re.matches = []string{}
 }

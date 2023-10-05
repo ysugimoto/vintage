@@ -17,6 +17,7 @@ func Table_lookup_bool[T core.EdgeRuntime](
 	key string,
 	defaultValue bool,
 ) (bool, error) {
+
 	table, ok := ctx.Tables[id]
 	if !ok {
 		return defaultValue, errors.FunctionError(

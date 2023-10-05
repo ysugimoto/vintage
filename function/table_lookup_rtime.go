@@ -19,6 +19,7 @@ func Table_lookup_rtime[T core.EdgeRuntime](
 	key string,
 	defaultValue time.Duration,
 ) (time.Duration, error) {
+
 	table, ok := ctx.Tables[id]
 	if !ok {
 		return defaultValue, errors.FunctionError(

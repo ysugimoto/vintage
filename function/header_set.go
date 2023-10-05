@@ -33,19 +33,19 @@ func Header_set[T core.EdgeRuntime](
 	}
 
 	switch where {
-	case "req":
+	case REQ:
 		if ctx.RequestHeader != nil {
 			ctx.RequestHeader.Set(name, value)
 		}
-	case "resp":
+	case RESP:
 		if ctx.ResponseHeader != nil {
 			ctx.ResponseHeader.Set(name, value)
 		}
-	case "obj", "beresp":
+	case OBJ, BERESP:
 		if ctx.BackendResponseHeader != nil {
 			ctx.BackendResponseHeader.Set(name, value)
 		}
-	case "bereq":
+	case BEREQ:
 		if ctx.BackendRequestHeader != nil {
 			ctx.BackendRequestHeader.Set(name, value)
 		}

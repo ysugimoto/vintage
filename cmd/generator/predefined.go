@@ -93,7 +93,7 @@ func generateBaseImpl(vars map[string]any) error {
 		fmt.Println(out.String())
 		return err
 	}
-	f, err := os.OpenFile("../../transformer/variable/base.go", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	f, err := os.OpenFile("../../transformer/variable/base.go", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func generatePredefinedMap(vars map[string]any) error {
 		fmt.Println(out.String())
 		return err
 	}
-	f, err := os.OpenFile("../../transformer/variable/predefined.go", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	f, err := os.OpenFile("../../transformer/variable/predefined.go", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
 	}

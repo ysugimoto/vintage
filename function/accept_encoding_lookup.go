@@ -17,10 +17,7 @@ func Accept_encoding_lookup[T core.EdgeRuntime](
 	requestedContentEncodings, defaultValue, acceptHeader string,
 ) (string, error) {
 
-	var encodings []string
-	for _, v := range strings.Split(requestedContentEncodings, ":") {
-		encodings = append(encodings, v)
-	}
+	encodings := strings.Split(requestedContentEncodings, ":")
 
 	index := len(encodings)
 	for _, v := range strings.Split(acceptHeader, ",") {

@@ -18,6 +18,7 @@ func Randombool[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	numerator, denominator int64,
 ) (bool, error) {
+
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 	r := rand.Int63n(math.MaxInt64)
 

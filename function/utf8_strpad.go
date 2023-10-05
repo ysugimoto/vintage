@@ -19,6 +19,7 @@ func Utf8_strpad[T core.EdgeRuntime](
 	width int64,
 	pad string,
 ) (string, error) {
+
 	w := int(math.Abs(float64(width)))
 	if len(input) >= w {
 		return input, nil

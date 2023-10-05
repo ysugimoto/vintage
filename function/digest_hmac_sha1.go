@@ -18,8 +18,8 @@ func Digest_hmac_sha1[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	key, text string,
 ) (string, error) {
+
 	mac := hmac.New(sha1.New, []byte(key))
 	mac.Write([]byte(text))
-
 	return hex.EncodeToString(mac.Sum(nil)), nil
 }

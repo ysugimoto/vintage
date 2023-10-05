@@ -23,6 +23,7 @@ func Randomstr[T core.EdgeRuntime](
 	length int64,
 	optional ...string,
 ) (string, error) {
+
 	characters := Randomstr_default_characters
 	if len(optional) > 0 {
 		characters = []rune(optional[0])

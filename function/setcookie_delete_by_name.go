@@ -16,6 +16,7 @@ func Setcookie_delete_by_name[T core.EdgeRuntime](
 	where string, // IDENT
 	name string,
 ) (bool, error) {
+
 	switch where {
 	case "beresp":
 		if ctx.BackendResponseHeader == nil {
@@ -38,5 +39,4 @@ func Setcookie_delete_by_name[T core.EdgeRuntime](
 			Setcookie_delete_by_name_Name, "Invalid ident: %s", where,
 		)
 	}
-
 }

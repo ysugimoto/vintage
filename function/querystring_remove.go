@@ -16,6 +16,7 @@ func Querystring_remove[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	url string,
 ) (string, error) {
+
 	if idx := strings.Index(url, "?"); idx != -1 {
 		url = url[0:idx]
 	}

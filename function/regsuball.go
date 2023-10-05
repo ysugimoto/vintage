@@ -17,6 +17,7 @@ func Regsuball[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input, pattern, replacement string,
 ) (string, error) {
+
 	re, err := regexp.Compile(pattern)
 	if err != nil {
 		ctx.FastlyError = "EREGRECUR"

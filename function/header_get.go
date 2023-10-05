@@ -16,24 +16,25 @@ func Header_get[T core.EdgeRuntime](
 	where string, // IDENT
 	name string,
 ) (string, error) {
+
 	if !lib.IsValidHeader(name) {
 		return "", nil
 	}
 
 	switch where {
-	case "req":
+	case REQ:
 		if ctx.RequestHeader != nil {
 			return ctx.RequestHeader.Get(name), nil
 		}
-	case "resp":
+	case RESP:
 		if ctx.ResponseHeader != nil {
 			return ctx.ResponseHeader.Get(name), nil
 		}
-	case "obj", "beresp":
+	case OBJ, BERESP:
 		if ctx.BackendResponseHeader != nil {
 			return ctx.BackendResponseHeader.Get(name), nil
 		}
-	case "bereq":
+	case BEREQ:
 		if ctx.BackendRequestHeader != nil {
 			return ctx.BackendRequestHeader.Get(name), nil
 		}

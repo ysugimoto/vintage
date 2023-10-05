@@ -23,6 +23,7 @@ func Digest_time_hmac_md5[T core.EdgeRuntime](
 	secret string,
 	interval, offset int64,
 ) (string, error) {
+
 	return digest_time_hmac_md5(time.Now(), secret, interval, offset)
 }
 
@@ -31,6 +32,7 @@ func digest_time_hmac_md5(
 	secret string,
 	interval, offset int64,
 ) (string, error) {
+
 	dec, err := base64.StdEncoding.DecodeString(secret)
 	if err != nil {
 		return "", errors.FunctionError(

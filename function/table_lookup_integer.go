@@ -17,6 +17,7 @@ func Table_lookup_integer[T core.EdgeRuntime](
 	key string,
 	defaultValue int64,
 ) (int64, error) {
+
 	table, ok := ctx.Tables[id]
 	if !ok {
 		return defaultValue, errors.FunctionError(

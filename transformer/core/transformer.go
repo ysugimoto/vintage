@@ -95,13 +95,13 @@ func (tf *CoreTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 	for _, stmt := range vcl.Statements {
 		switch s := stmt.(type) {
 		case *ast.AclDeclaration:
-			code, err = tf.transformAcl(s)
+			code = tf.transformAcl(s)
 		case *ast.BackendDeclaration:
-			code, err = tf.transformBackend(s)
+			code = tf.transformBackend(s)
 		case *ast.DirectorDeclaration:
-			code, err = tf.transformDirector(s)
+			code = tf.transformDirector(s)
 		case *ast.TableDeclaration:
-			code, err = tf.transformTable(s)
+			code = tf.transformTable(s)
 		case *ast.SubroutineDeclaration:
 			// Reset local variables for each subroutines
 			tf.vars = make(map[string]*value.Value)

@@ -16,6 +16,7 @@ func Math_roundhalfdown[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	val float64,
 ) (float64, error) {
+
 	if math.IsNaN(val) || math.IsInf(val, -1) || math.IsInf(val, 1) {
 		return val, nil
 	}

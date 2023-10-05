@@ -17,6 +17,7 @@ func Querystring_get[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	u, name string,
 ) (string, error) {
+
 	var qs string
 	if idx := strings.Index(u, "?"); idx != -1 {
 		qs = u[idx+1:]

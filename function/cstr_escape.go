@@ -26,6 +26,7 @@ func Cstr_escape[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	str string,
 ) (string, error) {
+
 	var escaped []byte
 	for _, b := range []byte(str) {
 		if v, ok := Cstr_escape_CharacterMap[b]; ok {

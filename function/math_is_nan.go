@@ -16,5 +16,6 @@ func Math_is_nan[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	val float64,
 ) (bool, error) {
+
 	return math.IsNaN(val), nil
 }

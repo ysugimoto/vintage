@@ -17,6 +17,7 @@ func Std_strrep[T core.EdgeRuntime](
 	input string,
 	count int64,
 ) (string, error) {
+
 	if count < 0 {
 		count = 0
 	}

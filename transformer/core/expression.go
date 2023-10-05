@@ -101,6 +101,7 @@ func (tf *CoreTransformer) transformIdentValue(ident *ast.Ident) (*value.Value, 
 		}
 	} else if strings.HasPrefix(name, "re.group.") {
 		index := strings.TrimPrefix(name, "re.group.")
+		// nolint:errcheck // because regexp string always valid, not raise an error
 		if matched, _ := regexp.MatchString(`^[1-9]{1,2}$`, index); !matched {
 			return nil, TransformError(&ident.GetMeta().Token, "invalid regexp capture index: %s", name)
 		}

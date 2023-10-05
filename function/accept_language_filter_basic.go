@@ -21,11 +21,7 @@ func Accept_language_filter_basic[T core.EdgeRuntime](
 	nmatches int64,
 ) (string, error) {
 
-	var languages []string
-	for _, v := range strings.Split(lookup, ":") {
-		languages = append(languages, v)
-	}
-
+	languages := strings.Split(lookup, ":")
 	var matches []int
 	for _, v := range strings.Split(language, ",") {
 		v = strings.TrimSpace(v)

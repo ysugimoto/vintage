@@ -16,5 +16,6 @@ func Utf8_is_valid[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input string,
 ) (bool, error) {
+
 	return utf8.ValidString(input), nil
 }

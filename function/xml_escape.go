@@ -14,6 +14,7 @@ func Xml_escape[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input string,
 ) (string, error) {
+
 	var escaped []byte
 	for _, b := range []byte(input) {
 		switch b {

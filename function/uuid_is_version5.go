@@ -15,6 +15,7 @@ func Uuid_is_version5[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input string,
 ) (bool, error) {
+
 	if id, err := uuid.Parse(input); err != nil {
 		return false, nil
 	} else if id.Version() != 5 {

@@ -25,8 +25,8 @@ func NewFastlyTransformer(opts ...core.TransformOption) *FastlyTransformer {
 	f := &FastlyTransformer{
 		core.NewCoreTransfromer(opts...),
 	}
-	f.Packages.Add("github.com/ysugimoto/vintage/runtime/fastly", "")
-	f.Packages.Add("github.com/fastly/compute-sdk-go/fsthttp", "")
+	f.CoreTransformer.Packages.Add("github.com/ysugimoto/vintage/runtime/fastly", "")
+	f.CoreTransformer.Packages.Add("github.com/fastly/compute-sdk-go/fsthttp", "")
 	return f
 }
 

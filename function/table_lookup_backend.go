@@ -18,6 +18,7 @@ func Table_lookup_backend[T core.EdgeRuntime](
 	key string,
 	defaultBackend *vintage.Backend,
 ) (*vintage.Backend, error) {
+
 	table, ok := ctx.Tables[id]
 	if !ok {
 		return defaultBackend, errors.FunctionError(

@@ -18,6 +18,7 @@ func Std_str2ip[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	addr, fallback string,
 ) (net.IP, error) {
+
 	ip, err := netip.ParseAddr(addr)
 	if err != nil {
 		ip, err = netip.ParseAddr(fallback)

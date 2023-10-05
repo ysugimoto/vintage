@@ -75,6 +75,7 @@ func Std_strtol[T core.EdgeRuntime](
 	input string,
 	base int64,
 ) (int64, error) {
+
 	var i int64
 	var err error
 	switch base {

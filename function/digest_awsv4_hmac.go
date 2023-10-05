@@ -19,6 +19,7 @@ func Digest_awsv4_hmac[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	key, dateStamp, region, service, stringToSign string,
 ) (string, error) {
+
 	signature := []byte("AWS4" + key)
 	hashes := []string{
 		dateStamp,

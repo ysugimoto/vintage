@@ -17,6 +17,7 @@ func Header_filter[T core.EdgeRuntime](
 	where string, // IDENT
 	headers ...string,
 ) error {
+
 	for i := 1; i < len(headers); i++ {
 		if !lib.IsValidHeader(headers[i]) {
 			return errors.FunctionError(
@@ -28,19 +29,19 @@ func Header_filter[T core.EdgeRuntime](
 
 	var err error
 	switch where {
-	case "req":
+	case REQ:
 		if ctx.RequestHeader != nil {
 			err = header_filter_delete(ctx.RequestHeader, headers)
 		}
-	case "resp":
+	case RESP:
 		if ctx.ResponseHeader != nil {
 			err = header_filter_delete(ctx.ResponseHeader, headers)
 		}
-	case "bereq":
+	case BEREQ:
 		if ctx.BackendRequestHeader != nil {
 			err = header_filter_delete(ctx.BackendRequestHeader, headers)
 		}
-	case "obj", "beresp":
+	case OBJ, BERESP:
 		if ctx.BackendResponseHeader != nil {
 			err = header_filter_delete(ctx.BackendResponseHeader, headers)
 		}

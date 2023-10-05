@@ -16,5 +16,6 @@ func Digest_base64[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input string,
 ) (string, error) {
+
 	return base64.StdEncoding.EncodeToString([]byte(input)), nil
 }

@@ -16,6 +16,7 @@ func Math_atan2[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	y, x float64,
 ) (float64, error) {
+
 	switch {
 	case math.IsNaN(y) || math.IsNaN(x):
 		return math.NaN(), nil
@@ -41,13 +42,13 @@ func Math_atan2[T core.EdgeRuntime](
 	case y > 0 && x == 0:
 		return math.Pi / 2, nil
 	case y == 0 && x == 0:
-		ctx.FastlyError = "EDOM"
+		ctx.FastlyError = ErrEDOM
 		return 0, nil
 	default:
 		v := math.Atan2(y, x)
 		// underflow
 		if v < math.Inf(-1) {
-			ctx.FastlyError = "EDOM"
+			ctx.FastlyError = ErrEDOM
 			return y / x, nil
 		}
 		return v, nil

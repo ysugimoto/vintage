@@ -20,6 +20,7 @@ func Addr_extract_bits[T core.EdgeRuntime](
 	ip net.IP,
 	startBit, bitCount int64,
 ) (int64, error) {
+
 	if bitCount > 32 {
 		return 0, errors.FunctionError(Addr_extract_bits_Name, "start_bit must be less than 32")
 	}

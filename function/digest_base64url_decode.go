@@ -17,6 +17,7 @@ func Digest_base64url_decode[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input string,
 ) (string, error) {
+
 	dec, err := base64.URLEncoding.DecodeString(input)
 	if err != nil {
 		return "", errors.FunctionError(

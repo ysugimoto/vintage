@@ -18,6 +18,7 @@ func Std_ip[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	addr, fallback string,
 ) (net.IP, error) {
+
 	ip, err := netip.ParseAddr(addr)
 	if err != nil {
 		ip, err = netip.ParseAddr(fallback)
@@ -29,13 +30,14 @@ func Std_ip[T core.EdgeRuntime](
 		}
 	}
 
-	if ip.Is6() {
+	switch {
+	case ip.Is6():
 		v := ip.As16()
 		return net.IP(v[:]), nil
-	} else if ip.Is4() {
+	case ip.Is4():
 		v := ip.As4()
 		return net.IP(v[:]), nil
-	} else {
+	default:
 		return nil, errors.FunctionError(
 			Std_ip_Name, "Unexpected IP string: %s", ip.String(),
 		)

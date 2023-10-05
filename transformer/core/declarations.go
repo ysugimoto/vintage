@@ -12,7 +12,7 @@ import (
 
 const lineFeed = "\n"
 
-func (tf *CoreTransformer) transformAcl(acl *ast.AclDeclaration) ([]byte, error) {
+func (tf *CoreTransformer) transformAcl(acl *ast.AclDeclaration) []byte {
 	var buf bytes.Buffer
 
 	name := acl.Name.String()
@@ -37,10 +37,10 @@ func (tf *CoreTransformer) transformAcl(acl *ast.AclDeclaration) ([]byte, error)
 	}
 
 	buf.WriteString(")" + lineFeed)
-	return buf.Bytes(), nil
+	return buf.Bytes()
 }
 
-func (tf *CoreTransformer) transformBackend(backend *ast.BackendDeclaration) ([]byte, error) {
+func (tf *CoreTransformer) transformBackend(backend *ast.BackendDeclaration) []byte {
 	var buf bytes.Buffer
 
 	name := backend.Name.String()
@@ -71,10 +71,10 @@ func (tf *CoreTransformer) transformBackend(backend *ast.BackendDeclaration) ([]
 	buf.WriteString(")" + lineFeed)
 
 	tf.backends[name] = value.NewValue(value.BACKEND, "backend__"+name)
-	return buf.Bytes(), nil
+	return buf.Bytes()
 }
 
-func (tf *CoreTransformer) transformDirector(director *ast.DirectorDeclaration) ([]byte, error) {
+func (tf *CoreTransformer) transformDirector(director *ast.DirectorDeclaration) []byte {
 	var buf bytes.Buffer
 
 	name := director.Name.String()
@@ -105,10 +105,10 @@ func (tf *CoreTransformer) transformDirector(director *ast.DirectorDeclaration) 
 
 	buf.WriteString(")" + lineFeed)
 
-	return buf.Bytes(), nil
+	return buf.Bytes()
 }
 
-func (tf *CoreTransformer) transformTable(table *ast.TableDeclaration) ([]byte, error) {
+func (tf *CoreTransformer) transformTable(table *ast.TableDeclaration) []byte {
 	var buf bytes.Buffer
 
 	name := table.Name.String()
@@ -131,7 +131,7 @@ func (tf *CoreTransformer) transformTable(table *ast.TableDeclaration) ([]byte, 
 
 	buf.WriteString(")" + lineFeed)
 
-	return buf.Bytes(), nil
+	return buf.Bytes()
 }
 
 func (tf *CoreTransformer) transformSubroutine(sub *ast.SubroutineDeclaration) ([]byte, error) {
@@ -179,10 +179,10 @@ func (tf *CoreTransformer) transformSubroutine(sub *ast.SubroutineDeclaration) (
 	buf.WriteString("}" + lineFeed)
 
 	return buf.Bytes(), nil
-
 }
 
-func (tf *CoreTransformer) transformLoggingEndpoint(name string) ([]byte, error) {
+// nolint:unused
+func (tf *CoreTransformer) transformLoggingEndpoint(name string) []byte {
 	var buf bytes.Buffer
 
 	// Need to replace from "-" to "_" due to name is used on program variable
@@ -191,5 +191,5 @@ func (tf *CoreTransformer) transformLoggingEndpoint(name string) ([]byte, error)
 		fmt.Sprintf(`var %s = vintage.NewLoggingEndpoint("%s")`, tf.loggingEndpoints[name], name),
 	)
 
-	return buf.Bytes(), nil
+	return buf.Bytes()
 }

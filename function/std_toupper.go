@@ -16,5 +16,6 @@ func Std_toupper[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	val string,
 ) (string, error) {
+
 	return strings.ToUpper(val), nil
 }

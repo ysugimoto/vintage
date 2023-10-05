@@ -20,7 +20,7 @@ func Digest_hash_crc32b[T core.EdgeRuntime](
 	// https://github.com/whik/crc-lib-c/blob/master/crcLib.c#L527
 	var crc uint32 = 0xffffffff
 	for _, c := range []byte(input) {
-		crc = crc ^ (uint32)(c)
+		crc ^= uint32(c)
 		for i := 0; i < 8; i++ {
 			if crc&0x1 != 0 {
 				crc = (crc >> 1) ^ 0xEDB88320

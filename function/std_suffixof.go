@@ -16,5 +16,6 @@ func Std_suffixof[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input, suffix string,
 ) (bool, error) {
+
 	return strings.HasSuffix(input, suffix), nil
 }

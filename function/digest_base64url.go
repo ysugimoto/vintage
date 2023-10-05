@@ -16,5 +16,6 @@ func Digest_base64url[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input string,
 ) (string, error) {
+
 	return base64.URLEncoding.EncodeToString([]byte(input)), nil
 }

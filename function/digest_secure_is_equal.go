@@ -14,6 +14,7 @@ func Digest_secure_is_equal[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	s1, s2 string,
 ) (bool, error) {
+
 	r1 := []rune(s1)
 	r2 := []rune(s2)
 

@@ -16,6 +16,7 @@ func Std_replace_suffix[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input, target, replacement string,
 ) (string, error) {
+
 	if strings.HasSuffix(input, target) {
 		input = strings.TrimSuffix(input, target) + replacement
 	}

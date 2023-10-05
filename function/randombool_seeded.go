@@ -17,6 +17,7 @@ func Randombool_seeded[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	numerator, denominator, seed int64,
 ) (bool, error) {
+
 	rand.New(rand.NewSource(seed))
 	r := rand.Int63n(math.MaxInt64)
 

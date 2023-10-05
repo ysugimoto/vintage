@@ -16,6 +16,7 @@ func Uuid_version3[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	ns, name string,
 ) (string, error) {
+
 	space, err := uuid.Parse(ns)
 	if err != nil {
 		return "", errors.FunctionError(

@@ -18,8 +18,8 @@ func Digest_hmac_sha256_base64[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	key, text string,
 ) (string, error) {
+
 	mac := hmac.New(sha256.New, []byte(key))
 	mac.Write([]byte(text))
-
 	return base64.StdEncoding.EncodeToString(mac.Sum(nil)), nil
 }

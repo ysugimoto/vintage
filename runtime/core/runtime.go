@@ -160,7 +160,6 @@ func (c *Runtime[T]) RegexpMatch(src, dst string) (bool, error) {
 		return false, nil
 	}
 	return true, nil
-
 }
 
 func (c *Runtime[T]) factoryInitRequestHeaderBytes(hs map[string][]string) int64 {

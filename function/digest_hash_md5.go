@@ -17,7 +17,7 @@ func Digest_hash_md5[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input string,
 ) (string, error) {
-	enc := md5.Sum([]byte(input))
 
+	enc := md5.Sum([]byte(input))
 	return hex.EncodeToString(enc[:]), nil
 }

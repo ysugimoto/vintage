@@ -17,6 +17,7 @@ func Parse_time_delta[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	specifier string,
 ) (int64, error) {
+
 	var delta int64
 	var stack []byte
 

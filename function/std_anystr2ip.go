@@ -78,7 +78,7 @@ func Std_anystr2ip_ParseIpv4(addr string) (net.IP, error) {
 				"Failed to parse IPv4 string: %w", err,
 			)
 		}
-		// thrid segment represetns remainings of IPs (---.---.xxx.xxx)
+		// third segment represetns remainings of IPs (---.---.xxx.xxx)
 		v3, err := Std_anystr2ip_ParseString(segments[2])
 		if err != nil {
 			return nil, errors.FunctionError(
@@ -104,7 +104,7 @@ func Std_anystr2ip_ParseIpv4(addr string) (net.IP, error) {
 				"Failed to parse IPv4 string: %w", err,
 			)
 		}
-		// thrid segment represetns third bits of IP (---.---.xxx.---)
+		// third segment represetns third bits of IP (---.---.xxx.---)
 		v3, err := Std_anystr2ip_ParseString(segments[2])
 		if err != nil {
 			return nil, errors.FunctionError(

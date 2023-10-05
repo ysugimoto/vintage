@@ -186,23 +186,13 @@ func sanitizeCookieName(n string) string {
 // See https://golang.org/issue/7243 for the discussion.
 func sanitizeCookieValue(v string) string {
 	v = sanitizeOrWarn("Cookie.Value", validCookieValueByte, v)
-	if len(v) == 0 {
+	if v == "" {
 		return v
 	}
 	if strings.ContainsAny(v, " ,") {
 		return `"` + v + `"`
 	}
 	return v
-}
-
-// path-av           = "Path=" path-value
-// path-value        = <any CHAR except CTLs or ";">
-func sanitizeCookiePath(v string) string {
-	return sanitizeOrWarn("Cookie.Path", validCookiePathByte, v)
-}
-
-func validCookiePathByte(b byte) bool {
-	return 0x20 <= b && b < 0x7f && b != ';'
 }
 
 func sanitizeOrWarn(fieldName string, valid func(byte) bool, v string) string {

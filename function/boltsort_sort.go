@@ -19,6 +19,7 @@ func Boltsort_sort[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input string,
 ) (string, error) {
+
 	parsed, err := url.ParseRequestURI(input)
 	if err != nil {
 		// This function does not raise an error

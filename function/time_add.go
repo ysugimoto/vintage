@@ -17,5 +17,6 @@ func Time_add[T core.EdgeRuntime](
 	t1 time.Time,
 	t2 time.Duration,
 ) (time.Time, error) {
+
 	return t1.Add(t2), nil
 }

@@ -27,6 +27,7 @@ func Digest_rsa_verify[T core.EdgeRuntime](
 	publicKey, payload, digest string,
 	optional ...string, // IDENT, base64Method
 ) (bool, error) {
+
 	base64Method := "url_nopad"
 	if len(optional) > 0 {
 		base64Method = optional[0]
@@ -110,7 +111,7 @@ func digest_rsa_verify_HashSum(payload string, hash crypto.Hash) []byte {
 	}
 }
 
-func digest_rsa_verify_DecodeArgument(digest string, b64 string) ([]byte, error) {
+func digest_rsa_verify_DecodeArgument(digest, b64 string) ([]byte, error) {
 	switch b64 {
 	case "standard":
 		return base64.StdEncoding.DecodeString(digest)

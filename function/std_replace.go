@@ -16,5 +16,6 @@ func Std_replace[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input, target, replacement string,
 ) (string, error) {
+
 	return strings.Replace(input, target, replacement, 1), nil
 }

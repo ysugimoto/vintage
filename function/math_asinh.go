@@ -17,6 +17,7 @@ func Math_asinh[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	val float64,
 ) (float64, error) {
+
 	switch {
 	case math.IsNaN(val):
 		return val, nil
@@ -25,7 +26,7 @@ func Math_asinh[T core.EdgeRuntime](
 	case val == 0:
 		return val, nil
 	case lib.IsSubnormalFloat64(val):
-		ctx.FastlyError = "ERANGE"
+		ctx.FastlyError = ErrERANGE
 		return val, nil
 	default:
 		return math.Asinh(val), nil

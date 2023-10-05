@@ -19,6 +19,7 @@ func Time_hex_to_time[T core.EdgeRuntime](
 	divisor int64,
 	dividend string,
 ) (time.Time, error) {
+
 	if divisor == 0 {
 		return time.Time{}, errors.FunctionError(
 			Time_hex_to_time_Name, "Could not divide by zero",

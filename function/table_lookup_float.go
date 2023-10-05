@@ -17,6 +17,7 @@ func Table_lookup_float[T core.EdgeRuntime](
 	key string,
 	defaultValue float64,
 ) (float64, error) {
+
 	table, ok := ctx.Tables[id]
 	if !ok {
 		return defaultValue, errors.FunctionError(

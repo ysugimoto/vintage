@@ -17,7 +17,7 @@ func Digest_hash_sha256[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input string,
 ) (string, error) {
-	enc := sha256.Sum256([]byte(input))
 
+	enc := sha256.Sum256([]byte(input))
 	return hex.EncodeToString(enc[:]), nil
 }

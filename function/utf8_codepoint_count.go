@@ -16,5 +16,6 @@ func Utf8_codepoint_count[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	input string,
 ) (int64, error) {
+
 	return int64(utf8.RuneCountInString(input)), nil
 }

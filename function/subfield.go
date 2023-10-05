@@ -19,6 +19,7 @@ func Subfield[T core.EdgeRuntime](
 	subject, fieldName string,
 	optional ...string,
 ) (string, error) {
+
 	separator := ","
 	if len(optional) > 0 {
 		if len(optional[0]) > 1 {

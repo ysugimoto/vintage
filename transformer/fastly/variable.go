@@ -18,6 +18,7 @@ func NewFastlyVariable() *FastlyVariable {
 	}
 }
 
+// nolint:funlen,gocyclo
 func (fv *FastlyVariable) Get(name string) (*value.Value, error) {
 	// Lookup variable for fastly specific field
 
@@ -26,22 +27,22 @@ func (fv *FastlyVariable) Get(name string) (*value.Value, error) {
 		return value.NewValue(value.RTIME, "ctx.Backend.BetweenBytesTimeout"), nil
 	// Backend request related variables
 	case v.BEREQ_BODY_BYTES_WRITTEN:
-		v := value.Temporary()
+		tmp := value.Temporary()
 		return value.NewValue(
 			value.INTEGER,
-			v,
+			tmp,
 			value.Prepare(
-				fmt.Sprintf("%s, err := ctx.BackendBodyBytesWritten()", v),
+				fmt.Sprintf("%s, err := ctx.BackendBodyBytesWritten()", tmp),
 				value.ErrorCheck,
 			),
 		), nil
 	case v.BEREQ_BYTES_WRITTEN:
-		v := value.Temporary()
+		tmp := value.Temporary()
 		return value.NewValue(
 			value.INTEGER,
-			v,
+			tmp,
 			value.Prepare(
-				fmt.Sprintf("%s, err := ctx.BackendBytesWritten()", v),
+				fmt.Sprintf("%s, err := ctx.BackendBytesWritten()", tmp),
 				value.ErrorCheck,
 			),
 		), nil

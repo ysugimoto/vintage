@@ -17,6 +17,7 @@ func Math_tanh[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	val float64,
 ) (float64, error) {
+
 	switch {
 	case math.IsNaN(val):
 		return val, nil

@@ -14,6 +14,7 @@ func H2_disable_header_compression[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	optional ...string,
 ) error {
+
 	ctx.DisableCompressionHeaders = append(ctx.DisableCompressionHeaders, optional...)
 	return nil
 }

@@ -46,6 +46,7 @@ func Std_strtof[T core.EdgeRuntime](
 	input string,
 	base int64,
 ) (float64, error) {
+
 	switch base {
 	case 0:
 		if strings.HasPrefix(input, "0x") {
@@ -54,7 +55,7 @@ func Std_strtof[T core.EdgeRuntime](
 		return Std_strtof_Decimal(input)
 	case 10:
 		if strings.HasPrefix(input, "0x") {
-			ctx.FastlyError = "EPARSENUM"
+			ctx.FastlyError = ErrEPASENUM
 			return 0, errors.FunctionError(
 				Std_strtof_Name,
 				"string must not have 0x prefix of when base number is 10",
@@ -63,7 +64,7 @@ func Std_strtof[T core.EdgeRuntime](
 		return Std_strtof_Decimal(input)
 	case 16:
 		if !strings.HasPrefix(input, "0x") {
-			ctx.FastlyError = "EPARSENUM"
+			ctx.FastlyError = ErrEPASENUM
 			return 0, errors.FunctionError(
 				Std_strtof_Name,
 				"string must have 0x prefix of when base number is 16",
@@ -71,7 +72,7 @@ func Std_strtof[T core.EdgeRuntime](
 		}
 		return Std_strtof_Hex(input)
 	default:
-		ctx.FastlyError = "EPARSENUM"
+		ctx.FastlyError = ErrEPASENUM
 		return 0, errors.FunctionError(
 			Std_strtof_Name,
 			"Base number accepts only 0, 10 and 16",

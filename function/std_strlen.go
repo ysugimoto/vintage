@@ -15,6 +15,6 @@ func Std_strlen[T core.EdgeRuntime](
 	val string,
 ) (int64, error) {
 	// Note: Fastly does not consider multibyte, so "日本語" in Japanese treat as 15 byte (3bytes per 1 word)
-	// And, also does not consider surrogate-pair characeter probablly
+	// And, also does not consider surrogate-pair characeter probably
 	return int64(len(val)), nil
 }

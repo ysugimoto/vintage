@@ -16,5 +16,6 @@ func Math_is_infinite[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	val float64,
 ) (bool, error) {
+
 	return math.IsInf(val, -1) || math.IsInf(val, 1), nil
 }

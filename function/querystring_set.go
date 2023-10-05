@@ -16,6 +16,7 @@ func Querystring_set[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	url, name, value string,
 ) (string, error) {
+
 	query, err := lib.ParseQuery(url)
 	if err != nil {
 		return "", errors.FunctionError(

@@ -17,6 +17,7 @@ func Std_atof[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	val string,
 ) (float64, error) {
+
 	f, err := strconv.ParseFloat(val, 64)
 	if err != nil {
 		return 0, errors.FunctionError(

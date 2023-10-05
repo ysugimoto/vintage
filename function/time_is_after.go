@@ -16,5 +16,6 @@ func Time_is_after[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	t1, t2 time.Time,
 ) (bool, error) {
+
 	return t1.After(t2), nil
 }

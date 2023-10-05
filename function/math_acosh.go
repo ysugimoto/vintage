@@ -16,16 +16,17 @@ func Math_acosh[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	val float64,
 ) (float64, error) {
+
 	switch {
 	case math.IsNaN(val):
 		return val, nil
 	case math.IsInf(val, -1), math.IsInf(val, 1):
-		ctx.FastlyError = "EDOM"
+		ctx.FastlyError = ErrEDOM
 		return math.NaN(), nil
 	case val == 1.0:
 		return 0, nil
 	case val < 1.0:
-		ctx.FastlyError = "EDOM"
+		ctx.FastlyError = ErrEDOM
 		return math.NaN(), nil
 	default:
 		return math.Acosh(val), nil

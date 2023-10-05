@@ -20,6 +20,7 @@ func Time_runits[T core.EdgeRuntime](
 	unit string,
 	rtime time.Duration,
 ) (string, error) {
+
 	switch unit {
 	case "s":
 		return fmt.Sprintf("%d", int64(rtime.Seconds())), nil

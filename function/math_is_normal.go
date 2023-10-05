@@ -17,6 +17,7 @@ func Math_is_normal[T core.EdgeRuntime](
 	ctx *core.Runtime[T],
 	val float64,
 ) (bool, error) {
+
 	if math.IsNaN(val) || math.IsInf(val, -1) || math.IsInf(val, 1) {
 		return true, nil
 	}
