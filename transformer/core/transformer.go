@@ -6,16 +6,16 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/ysugimoto/falco/ast"
-	"github.com/ysugimoto/falco/context"
 	"github.com/ysugimoto/falco/lexer"
 	"github.com/ysugimoto/falco/parser"
 	"github.com/ysugimoto/falco/resolver"
+	"github.com/ysugimoto/falco/snippets"
 	"github.com/ysugimoto/vintage/transformer/value"
 	"github.com/ysugimoto/vintage/transformer/variable"
 )
 
 type CoreTransformer struct {
-	snippets            *context.FastlySnippet
+	snippets            *snippets.Snippets
 	acls                map[string]*value.Value
 	backends            map[string]*value.Value
 	tables              map[string]*value.Value
@@ -47,6 +47,7 @@ func NewCoreTransfromer(opts ...TransformOption) *CoreTransformer {
 	for i := range opts {
 		opts[i](t)
 	}
+
 	return t
 }
 
@@ -84,6 +85,9 @@ func (tf *CoreTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 			}
 			vcl.Statements = append(s.Statements, vcl.Statements...)
 		}
+		for key := range tf.snippets.LoggingEndpoints {
+			buf.Write(tf.transformLoggingEndpoint(key))
+		}
 	}
 
 	vcl.Statements, err = tf.resolveIncludeStatements(rslv, vcl.Statements, true)
@@ -92,6 +96,7 @@ func (tf *CoreTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 	}
 
 	var code []byte
+	var subroutines []*ast.SubroutineDeclaration
 	for _, stmt := range vcl.Statements {
 		switch s := stmt.(type) {
 		case *ast.AclDeclaration:
@@ -103,15 +108,29 @@ func (tf *CoreTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 		case *ast.TableDeclaration:
 			code = tf.transformTable(s)
 		case *ast.SubroutineDeclaration:
-			// Reset local variables for each subroutines
-			tf.vars = make(map[string]*value.Value)
-			code, err = tf.transformSubroutine(s)
+			// Store subroutine in order to hoisiting other declarations
+			subroutines = append(subroutines, s)
+			continue
+		case *ast.ImportStatement:
+			// Nothing to to for import statement
 		// Currently we don't support penaltybox and ratecounter
 		// case *ast.PenaltyboxDeclaration:
 		// case *ast.RatecounterDeclaration:
 		default:
 			err = fmt.Errorf("Unexpected declaration found: %v", s)
 		}
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		buf.Write(code)
+		buf.WriteString(lineFeed)
+	}
+
+	// Transform subroutines after all declaration is transformed
+	for i := range subroutines {
+		// Reset local variables for each subroutines
+		tf.vars = make(map[string]*value.Value)
+		code, err := tf.transformSubroutine(subroutines[i])
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}

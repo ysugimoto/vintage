@@ -28,7 +28,7 @@ type EdgeRuntime interface {
 	// Proxy is hook point for actual senging origin request.
 	// This hook will be called before calling vcl_fetch
 	// Must return raw headers of BackendResponse
-	Proxy(ctx context.Context, backend *vintage.Backend) (vintage.RawHeader, error)
+	Proxy(ctx context.Context, backendName string) (vintage.RawHeader, error)
 
 	// WriteResponse is hook point for sending client response.
 	// This hook will be called before calling vcl_log

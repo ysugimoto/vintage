@@ -145,8 +145,19 @@ func (c *Runtime[T]) lifecyclePass(ctx context.Context, r T) error {
 func (c *Runtime[T]) lifecycleFetch(ctx context.Context, r T) error {
 	var state vintage.State = vintage.DELIVER
 	var err error
+	var backendName string
 
-	if rh, err := r.Proxy(ctx, c.Backend); err != nil {
+	// if stored backend is a director, select backend from its type
+	if c.Backend.Director != nil {
+		backendName = c.Backend.Director.Backend(vintage.RequestIdentity{
+			Hash:   c.RequestHash,
+			Client: c.GetClientIdentity(),
+		})
+	} else {
+		backendName = c.Backend.Name
+	}
+
+	if rh, err := r.Proxy(ctx, backendName); err != nil {
 		return errors.WithStack(err)
 	} else {
 		c.BackendRequestHeader = NewHeader(rh)

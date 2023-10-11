@@ -36,6 +36,10 @@ table example_table STRING {
   "foo": "bar",
 }
 
+director example_director random {
+  { .backend =  example_com; .weight = 10; }
+}
+
 sub vcl_recv {
   #Fastly recv
   // declare local var.Default INTEGER;

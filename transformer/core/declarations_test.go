@@ -27,11 +27,7 @@ acl example {
 	}
 	acl := vcl.Statements[0]
 	tr := NewCoreTransfromer()
-	code, err := tr.transformAcl(acl.(*ast.AclDeclaration))
-	if err != nil {
-		t.Errorf("Failed to transform ACL: %s", err)
-		return
-	}
+	code := tr.transformAcl(acl.(*ast.AclDeclaration))
 	code, err = format.Source(code)
 	if err != nil {
 		t.Errorf("Failed to format code: %s", err)
@@ -68,11 +64,7 @@ backend example {
 	}
 	backend := vcl.Statements[0]
 	tr := NewCoreTransfromer()
-	code, err := tr.transformBackend(backend.(*ast.BackendDeclaration))
-	if err != nil {
-		t.Errorf("Failed to transform Backend: %s", err)
-		return
-	}
+	code := tr.transformBackend(backend.(*ast.BackendDeclaration))
 	code, err = format.Source(code)
 	if err != nil {
 		t.Errorf("Failed to format code: %s", err)
@@ -106,11 +98,7 @@ director example client {
 	}
 	d := vcl.Statements[0]
 	tr := NewCoreTransfromer()
-	code, err := tr.transformDirector(d.(*ast.DirectorDeclaration))
-	if err != nil {
-		t.Errorf("Failed to transform Director: %s", err)
-		return
-	}
+	code := tr.transformDirector(d.(*ast.DirectorDeclaration))
 	code, err = format.Source(code)
 	if err != nil {
 		t.Errorf("Failed to format code: %s", err)
@@ -146,11 +134,7 @@ table example STRING {
 	}
 	table := vcl.Statements[0]
 	tr := NewCoreTransfromer()
-	code, err := tr.transformTable(table.(*ast.TableDeclaration))
-	if err != nil {
-		t.Errorf("Failed to transform Table: %s", err)
-		return
-	}
+	code := tr.transformTable(table.(*ast.TableDeclaration))
 	code, err = format.Source(code)
 	if err != nil {
 		t.Errorf("Failed to format code: %s", err)
@@ -194,7 +178,7 @@ sub vcl_recv {
 	}
 	expect := `
 func vcl_recv(ctx *core.Runtime) (vintage.State, error) {
-	re := vintage.RegexpMatchedGroup{}
+	re := &vintage.RegexpMatchedGroup{}
 	defer re.Release()
 
 	ctx.RequestHeader.Set("Foo", "bar")

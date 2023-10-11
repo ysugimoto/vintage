@@ -33,9 +33,9 @@ func NewBackend(name string, opts ...BackendOption) *Backend {
 	return b
 }
 
-func (b *Backend) Backend() string {
+func (b *Backend) Backend(ident RequestIdentity) string {
 	if b.Director != nil {
-		return b.Director.Backend()
+		return b.Director.Backend(ident)
 	}
 	return b.Name
 }

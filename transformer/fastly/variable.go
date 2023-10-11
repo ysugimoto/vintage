@@ -160,10 +160,6 @@ func (fv *FastlyVariable) Get(name string) (*value.Value, error) {
 		v.CLIENT_GEO_REGION_LATIN1,
 		v.CLIENT_GEO_REGION_UTF8:
 		return value.NewValue(value.STRING, "ctx.Geo.Region"), nil
-	case v.CLIENT_IDENTITY:
-		return value.NewValue(value.STRING, "ctx.ClientIdentity()"), nil
-	case v.CLIENT_IP:
-		return value.NewValue(value.IP, "ctx.ClientIP()"), nil
 
 	// @Tentative
 	case v.CLIENT_PORT:

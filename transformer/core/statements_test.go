@@ -61,11 +61,7 @@ func TestTransformReturnStatement(t *testing.T) {
 			continue
 		}
 		tr := NewCoreTransfromer()
-		code, err := tr.transformReturnStatement(stmt[0].(*ast.ReturnStatement))
-		if err != nil {
-			t.Errorf("Return statement transforming error: %s", err)
-			continue
-		}
+		code := tr.transformReturnStatement(stmt[0].(*ast.ReturnStatement))
 
 		if diff := cmp.Diff(string(code), tt.expect); diff != "" {
 			t.Errorf("code generation mismatch, diff=%s", diff)
@@ -359,11 +355,7 @@ func TestTransformCallStatement(t *testing.T) {
 			continue
 		}
 		tr := NewCoreTransfromer()
-		code, err := tr.transformCallStatement(stmt[0].(*ast.CallStatement))
-		if err != nil {
-			t.Errorf("Call statement transforming error: %s", err)
-			continue
-		}
+		code := tr.transformCallStatement(stmt[0].(*ast.CallStatement))
 
 		if diff := cmp.Diff(string(code), tt.expect); diff != "" {
 			t.Errorf("code generation mismatch, diff=%s", diff)

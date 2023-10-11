@@ -72,7 +72,7 @@ func (tf *CoreTransformer) transformExpression(
 	}
 
 	if err != nil {
-		return nil, TransformError(&expr.GetMeta().Token, "Expression transforming error: %s", err)
+		return nil, errors.WithStack(err)
 	}
 
 	// Add dependent packages for the runtime

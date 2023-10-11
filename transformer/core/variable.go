@@ -24,6 +24,11 @@ func (cv *CoreVariable) Get(name string) (*value.Value, error) {
 	case v.LF:
 		return value.NewValue(value.STRING, "\n"), nil
 
+	case v.CLIENT_IDENTITY:
+		return value.NewValue(value.STRING, "ctx.GetClientIdentity()"), nil
+	case v.CLIENT_IP:
+		return value.NewValue(value.IP, "ctx.ClientIp"), nil
+
 	// @Tentative
 	case v.BEREQ_IS_CLUSTERING:
 		return value.NewValue(value.BOOL, "false", value.Comment(name)), nil

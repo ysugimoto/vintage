@@ -35,6 +35,11 @@ const (
 // Temporal value of local IP
 var LocalHost = net.IPv4(127, 0, 0, 1)
 
+type RequestIdentity struct {
+	Hash   string // value of req.hash
+	Client string // value of client.identity
+}
+
 type State string
 
 const (

@@ -1,5 +1,7 @@
 .PHONY: test
 
+dev: test lint
+
 test:
 	go test ./...
 

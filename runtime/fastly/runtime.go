@@ -24,7 +24,6 @@ type Runtime struct {
 	Response        *fsthttp.Response
 	ClientResponse  fsthttp.ResponseWriter
 	Geo             *geo.Geo
-	clientIdentity  string
 }
 
 func (r *Runtime) Context() *core.Runtime[*Runtime] {
@@ -49,6 +48,12 @@ func NewRuntime(w fsthttp.ResponseWriter, r *fsthttp.Request) (*Runtime, error) 
 
 func (r *Runtime) Execute(ctx context.Context) error {
 	r.RequestHash = r.Request.URL.String()
+	idx := strings.LastIndex(r.Request.RemoteAddr, ":")
+	if idx == -1 {
+		r.ClientIp = net.ParseIP(r.Request.RemoteAddr)
+	} else {
+		r.ClientIp = net.ParseIP(r.Request.RemoteAddr[:idx])
+	}
 	if err := r.Lifecycle(ctx, r); err != nil {
 		return errors.WithStack(err)
 	}
@@ -56,9 +61,9 @@ func (r *Runtime) Execute(ctx context.Context) error {
 	return nil
 }
 
-func (r *Runtime) Proxy(ctx context.Context, backend *vintage.Backend) (vintage.RawHeader, error) {
-	fmt.Printf("Proxy request send to %s\n", backend.Backend())
-	resp, err := r.BackendRequest.Send(ctx, backend.Backend())
+func (r *Runtime) Proxy(ctx context.Context, backendName string) (vintage.RawHeader, error) {
+	fmt.Printf("Proxy request send to %s\n", backendName)
+	resp, err := r.BackendRequest.Send(ctx, backendName)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -116,7 +121,6 @@ func (r *Runtime) CreateClientResponse() (vintage.RawHeader, error) {
 	// Clone backend response
 	r.Response = &fsthttp.Response{
 		Request:    r.BackendRequest,
-		Backend:    r.Backend.Backend(),
 		StatusCode: beresp.StatusCode,
 		Header:     beresp.Header.Clone(),
 		Body:       io.NopCloser(bytes.NewReader(body.Bytes())),

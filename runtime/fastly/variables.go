@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"net"
 	"net/netip"
 	"net/url"
 	"strconv"
@@ -15,24 +14,6 @@ import (
 	"github.com/fastly/compute-sdk-go/fsthttp"
 	"github.com/pkg/errors"
 )
-
-// Used for client.identity
-func (r *Runtime) ClientIdentity() string {
-	if r.clientIdentity == "" {
-		// default as client.ip
-		r.clientIdentity = r.ClientIP().String()
-	}
-	return r.clientIdentity
-}
-
-// Used for client.ip
-func (r *Runtime) ClientIP() net.IP {
-	idx := strings.LastIndex(r.Request.RemoteAddr, ":")
-	if idx == -1 {
-		return net.ParseIP(r.Request.RemoteAddr)
-	}
-	return net.ParseIP(r.Request.RemoteAddr[:idx])
-}
 
 // Used for req.body
 func (r *Runtime) RequestBody() (string, error) {

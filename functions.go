@@ -33,7 +33,7 @@ func ToString[T Primitive](v T) string {
 	case time.Time:
 		return t.Format(httpTime)
 	case *Backend:
-		return t.Backend()
+		return t.Name
 	case *Acl:
 		return t.Name
 	default:

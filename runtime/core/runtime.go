@@ -3,6 +3,7 @@ package core
 import (
 	"crypto/sha256"
 	"fmt"
+	"net"
 	"net/textproto"
 	"regexp"
 	"strconv"
@@ -24,6 +25,9 @@ type Runtime[T EdgeRuntime] struct {
 	Restarts              int
 	RequestHash           string
 	RequestHeaderBytes    int64
+
+	ClientIp       net.IP
+	ClientIdentity string
 
 	// We should implement User-Agent related matcher by ourselves
 	UserAgent *UserAgent
@@ -201,4 +205,13 @@ func (c *Runtime[T]) RequestDigest() string {
 		return strings.Repeat("0", 64)
 	}
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(c.RequestHash)))
+}
+
+// Used for client.identity
+func (c *Runtime[T]) GetClientIdentity() string {
+	if c.ClientIdentity == "" {
+		// default as client.ip
+		c.ClientIdentity = c.ClientIp.String()
+	}
+	return c.ClientIdentity
 }
