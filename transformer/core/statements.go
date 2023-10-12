@@ -447,12 +447,16 @@ func (tf *CoreTransformer) transformIfStatement(stmt *ast.IfStatement) ([]byte, 
 		}
 		prepares = append(prepares, []byte(c.Prepare)...)
 		buf.WriteString(fmt.Sprintf(" else if %s {"+lineFeed, c.String()))
-		tf.regexMatchedStack.Push(c.Matches)
+		if c.Matches != "" {
+			tf.regexMatchedStack.Push(c.Matches)
+		}
 		consequence, _, err := tf.transformBlockStatement(elseif.Consequence.Statements)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		tf.regexMatchedStack.Pop()
+		if c.Matches != "" {
+			tf.regexMatchedStack.Pop()
+		}
 		buf.Write(consequence)
 		buf.WriteString("}")
 	}
