@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/ysugimoto/falco/ast"
@@ -95,9 +96,9 @@ func (tf *CoreTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	var code []byte
 	var subroutines []*ast.SubroutineDeclaration
 	for _, stmt := range vcl.Statements {
+		var code []byte
 		switch s := stmt.(type) {
 		case *ast.AclDeclaration:
 			code = tf.transformAcl(s)
@@ -106,11 +107,19 @@ func (tf *CoreTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 		case *ast.DirectorDeclaration:
 			code = tf.transformDirector(s)
 		case *ast.TableDeclaration:
-			code = tf.transformTable(s)
+			// On table transformation, we need to care about EdgeDictionary.
+			// If ast filename has "Remote.EdgeDictionary" string,
+			// the table is an EdgeDictionary which is manged in Fastly remote
+			// and then we generate code using compute-sdk-go/edgedict package.
+			if strings.Contains(s.Meta.Token.File, "Remote.EdgeDictionary") {
+				code = tf.transformEdgeDictionary(s)
+			} else {
+				// Otherwise, case of user defined table, transform as Table declaration
+				code = tf.transformTable(s)
+			}
 		case *ast.SubroutineDeclaration:
 			// Store subroutine in order to hoisiting other declarations
 			subroutines = append(subroutines, s)
-			continue
 		case *ast.ImportStatement:
 			// Nothing to to for import statement
 		// Currently we don't support penaltybox and ratecounter
@@ -122,8 +131,9 @@ func (tf *CoreTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		buf.Write(code)
-		buf.WriteString(lineFeed)
+		if len(code) > 0 {
+			buf.Write(code)
+		}
 	}
 
 	// Transform subroutines after all declaration is transformed

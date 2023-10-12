@@ -70,7 +70,7 @@ func (tf *CoreTransformer) transformDeclareStatement(stmt *ast.DeclareStatement)
 	switch value.VCLType(stmt.ValueType.Value) {
 	case value.STRING:
 		buf.WriteString(fmt.Sprintf("var local__%s string", name))
-		tf.vars[stmt.Name.Value] = value.NewValue(value.STRING, "local__ "+name)
+		tf.vars[stmt.Name.Value] = value.NewValue(value.STRING, "local__"+name)
 	case value.INTEGER:
 		buf.WriteString(fmt.Sprintf("var local__%s int64", name))
 		tf.vars[stmt.Name.Value] = value.NewValue(value.INTEGER, "local__"+name)
@@ -376,7 +376,7 @@ func (tf *CoreTransformer) transformFunctionCallStatement(stmt *ast.FunctionCall
 		))
 	}
 
-	tf.Packages.Add("github.com/ysugimoto/vintage/builtin", "")
+	tf.Packages.Add("github.com/ysugimoto/vintage/function", "")
 	code := fn.Name + "(ctx.Runtime, "
 	var prepares string
 	var arguments []string

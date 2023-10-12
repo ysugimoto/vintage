@@ -1195,18 +1195,21 @@ func (cv *CoreVariable) Set(name string, val *value.Value) (*value.Value, error)
 		return value.NewValue(
 			value.STRING,
 			fmt.Sprintf(`ctx.RequestHeader.Set("%s", %s)`, match[1], val.Conversion(value.STRING).String()),
+			value.FromValue(val),
 		), nil
 	}
 	if match := v.BackendRequestHttpHeaderRegex.FindStringSubmatch(name); match != nil {
 		return value.NewValue(
 			value.STRING,
 			fmt.Sprintf(`ctx.BackendRequestHeader.Set("%s", %s)`, match[1], val.Conversion(value.STRING).String()),
+			value.FromValue(val),
 		), nil
 	}
 	if match := v.BackendResponseHttpHeaderRegex.FindStringSubmatch(name); match != nil {
 		return value.NewValue(
 			value.STRING,
 			fmt.Sprintf(`ctx.BackendResponseHeader.Set("%s", %s)`, match[1], val.Conversion(value.STRING).String()),
+			value.FromValue(val),
 		), nil
 	}
 	// object header is treated the same as backend response
@@ -1214,12 +1217,14 @@ func (cv *CoreVariable) Set(name string, val *value.Value) (*value.Value, error)
 		return value.NewValue(
 			value.STRING,
 			fmt.Sprintf(`ctx.BackendResponseHeader.Set("%s", %s)`, match[1], val.Conversion(value.STRING).String()),
+			value.FromValue(val),
 		), nil
 	}
 	if match := v.ResponseHttpHeaderRegex.FindStringSubmatch(name); match != nil {
 		return value.NewValue(
 			value.STRING,
 			fmt.Sprintf(`ctx.ResponseHeader.Set("%s", %s)`, match[1], val.Conversion(value.STRING).String()),
+			value.FromValue(val),
 		), nil
 	}
 

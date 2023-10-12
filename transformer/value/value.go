@@ -45,7 +45,7 @@ func Deprecated() ValueOption {
 
 func FromValue(v *Value) ValueOption {
 	return func(e *Value) {
-		e.Prepare += v.Prepare
+		e.Prepare = v.Prepare + e.Prepare
 		e.Comment += v.Comment
 		if v.Dependencies != nil {
 			for key, val := range v.Dependencies {
@@ -107,9 +107,7 @@ func (v *Value) stringConversion() *Value {
 		return v
 	}
 
-	v.Code = fmt.Sprintf(`vintage.ToString(%s)`, v.Code)
-	v.Type = STRING
-	return v
+	return NewValue(STRING, fmt.Sprintf(`vintage.ToString(%s)`, v.Code), FromValue(v))
 }
 
 func (v *Value) boolConversion() *Value {
@@ -117,24 +115,8 @@ func (v *Value) boolConversion() *Value {
 		return v
 	}
 
-	v.Code = fmt.Sprintf(`vintage.ToBool(%s)`, v.Code)
-	v.Type = BOOL
-	return v
-}
-
-var temporaryVarCount int
-var useFixedName bool
-
-func UseFixedTemporalValue() {
-	useFixedName = true
-}
-
-func Temporary() string {
-	if useFixedName {
-		return "tmp__fixed"
+	if v.Code == "" {
+		return NewValue(BOOL, `vintage.ToBool("")`, FromValue(v))
 	}
-	temporaryVarCount++
-	return fmt.Sprintf("tmp__%d", temporaryVarCount)
+	return NewValue(BOOL, fmt.Sprintf(`vintage.ToBool(%s)`, v.Code), FromValue(v))
 }
-
-var ErrorCheck = "if err != nil {\nreturn vintage.NONE, err\n}"

@@ -333,10 +333,10 @@ func TestTransformCallStatement(t *testing.T) {
 		{
 			input: `call custom_subroutine;`,
 			expect: strings.Join([]string{
-				"if tmp__fixed, err := custom_subroutine(ctx); err != nil {",
+				"if v__fixed, err := custom_subroutine(ctx); err != nil {",
 				"return vintage.NONE, err",
-				"} else if tmp__fixed != vintage.NONE {",
-				"return tmp__fixed, nil",
+				"} else if v__fixed != vintage.NONE {",
+				"return v__fixed, nil",
 				"}",
 			}, "\n"),
 		},
@@ -461,7 +461,7 @@ func TestTransformFunctionCallStatement(t *testing.T) {
 		{
 			input: `early_hints("link: </hinted.js>; rel=preload", "link: </hinted.css>; rel=preload");`,
 			expect: strings.Join([]string{
-				`if _, err := builtin.Early_hints(ctx.Runtime, "link: </hinted.js>; rel=preload", "link: </hinted.css>; rel=preload"); err != nil {`,
+				`if _, err := function.Early_hints(ctx.Runtime, "link: </hinted.js>; rel=preload", "link: </hinted.css>; rel=preload"); err != nil {`,
 				"return vintage.NONE, err",
 				"}",
 			}, "\n"),
@@ -469,7 +469,7 @@ func TestTransformFunctionCallStatement(t *testing.T) {
 		{
 			input: `early_hints("link: </hinted.js>; rel=preload", "link: </hinted.css>; rel=preload");`,
 			expect: strings.Join([]string{
-				`if _, err := builtin.Early_hints(ctx.Runtime, "link: </hinted.js>; rel=preload", "link: </hinted.css>; rel=preload"); err != nil {`,
+				`if _, err := function.Early_hints(ctx.Runtime, "link: </hinted.js>; rel=preload", "link: </hinted.css>; rel=preload"); err != nil {`,
 				"return vintage.NONE, err",
 				"}",
 			}, "\n"),

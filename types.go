@@ -19,7 +19,7 @@ const (
 )
 
 type Primitive interface {
-	string | int64 | float64 | bool | net.IP | time.Duration | time.Time | *Backend | *Acl
+	string | int64 | float64 | bool | net.IP | time.Duration | time.Time | *Backend | *Acl | *Table
 }
 
 // Alias of time.Duration for VCL RTIME value

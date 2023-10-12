@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -13,7 +12,8 @@ import (
 )
 
 func main() {
-	rslv, err := resolver.NewFileResolvers("../../example/default.vcl", []string{})
+	// rslv, err := resolver.NewFileResolvers("../../example/default.vcl", []string{})
+	rslv, err := resolver.NewFileResolvers("../../../../works/ise-cdn/dist/default.vcl", []string{})
 	if err != nil {
 		panic(err)
 	}
@@ -33,5 +33,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(string(buf))
+	fp, err := os.OpenFile("../../../../playground/go-compute-at-edge/vintage.go", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0o644)
+	if err != nil {
+		panic(err)
+	}
+	defer fp.Close()
+	fp.Write(buf) // nolint:errcheck
 }

@@ -36,6 +36,8 @@ func ToString[T Primitive](v T) string {
 		return t.Name
 	case *Acl:
 		return t.Name
+	case *Table:
+		return t.Name
 	default:
 		return ""
 	}

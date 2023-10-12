@@ -31,7 +31,7 @@ func (f *FunctionSpec) GenerateRuntimeSpec() {
 		for j, a := range args {
 			switch a {
 			case "ID", "TABLE":
-				updates = append(updates, "IDENT")
+				updates = append(updates, "STRING")
 			case "STRING_LIST":
 				f.VariadicArgumentStartsIndex = j
 			default:
@@ -94,7 +94,7 @@ func generateBuiltinFunctionScript() error {
 		"toVintageFunction": func(text string) string {
 			snake := []byte(strings.ReplaceAll(text, ".", "_"))
 			snake[0] -= 0x20
-			return "builtin." + string(snake)
+			return "function." + string(snake)
 		},
 	})
 	tpl = template.Must(tpl.Parse(tmplBuiltinFunction))

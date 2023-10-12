@@ -1,6 +1,7 @@
 package function
 
 import (
+	"github.com/fastly/compute-sdk-go/configstore"
 	"github.com/ysugimoto/vintage/errors"
 	"github.com/ysugimoto/vintage/runtime/core"
 )
@@ -32,6 +33,12 @@ func Table_lookup[T core.EdgeRuntime](
 		)
 	}
 
+	// If table is EdgeDictionary, fetch item from remote
+	if table.IsEdgeDictionary() {
+		return Table_lookup_EdgeDictionary(table.Name, key, defaultValue)
+	}
+
+	// Otherwise, lookup in-memory items
 	if v, ok := table.Items[key]; ok {
 		if cast, ok := v.(string); ok {
 			return cast, nil
@@ -42,4 +49,28 @@ func Table_lookup[T core.EdgeRuntime](
 		)
 	}
 	return defaultValue, nil
+}
+
+// In-memory cache store EdgeDictionary pointer for key
+var storeCaches map[string]*configstore.Store
+
+func Table_lookup_EdgeDictionary(dictName, key, defaultValue string) (string, error) {
+	store, ok := storeCaches[dictName]
+	if !ok {
+		opened, err := configstore.Open(dictName)
+		if err != nil {
+			return "", errors.FunctionError(
+				Table_lookup_Name,
+				"Failed to open configstore %s, %w", dictName, err,
+			)
+		}
+		storeCaches[dictName] = opened
+		store = opened
+	}
+
+	v, err := store.Get(key)
+	if err != nil {
+		return defaultValue, nil
+	}
+	return v, nil
 }

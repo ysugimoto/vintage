@@ -232,15 +232,23 @@ func (fv *FastlyVariable) Get(name string) (*value.Value, error) {
 	case v.OBJ_LASTUSE:
 		return value.NewValue(value.RTIME, "time.Duration(0)", value.Comment(name)), nil
 	case v.OBJ_PROTO:
-		return value.NewValue(value.STRING, "ctx.BackendResponse.Request.Proto", value.Comment(name)), nil
+		return value.NewValue(value.STRING, "ctx.BackendResponse.Request.Proto"), nil
 	case v.OBJ_RESPONSE:
-		return value.NewValue(value.STRING, "ctx.ResponseBody(c.BackendResponse)", value.Comment(name)), nil
+		tmp := value.Temporary()
+		return value.NewValue(
+			value.STRING,
+			tmp,
+			value.Prepare(
+				fmt.Sprintf("%s, err := ctx.ResponseBody(ctx.BackendResponse)", tmp),
+				value.ErrorCheck,
+			),
+		), nil
 	case v.OBJ_STALE_IF_ERROR:
 		return value.NewValue(value.RTIME, "ctx.ObjectStaleIfError"), nil
 	case v.OBJ_STALE_WHILE_REVALIDATE:
 		return value.NewValue(value.RTIME, "ctx.ObjectStaleWhileRevalidate"), nil
 	case v.OBJ_STATUS:
-		return value.NewValue(value.INTEGER, "int64(ctx.BackendResponse.StatusCode)", value.Comment(name)), nil
+		return value.NewValue(value.INTEGER, "int64(ctx.BackendResponse.StatusCode)"), nil
 	case v.OBJ_TTL:
 		return value.NewValue(value.RTIME, "ctx.ObjectTTL"), nil
 
@@ -306,7 +314,7 @@ func (fv *FastlyVariable) Get(name string) (*value.Value, error) {
 	case v.REQ_TOPURL:
 		return fv.Get("req.url")
 	case v.REQ_URL:
-		return value.NewValue(value.STRING, "ctx.RequestURL()"), nil
+		return value.NewValue(value.STRING, "ctx.RequestURL(ctx.Request)"), nil
 	case v.REQ_URL_BASENAME:
 		return value.NewValue(
 			value.STRING,
@@ -386,7 +394,7 @@ func (fv *FastlyVariable) Set(name string, val *value.Value) (*value.Value, erro
 	case v.BERESP_STATUS:
 		return value.NewValue(
 			value.STRING,
-			fmt.Sprintf("ctx.BackendResponse.StatusCode = %s", val.Conversion(value.INTEGER).String()),
+			fmt.Sprintf("ctx.BackendResponse.StatusCode = int(%s)", val.Conversion(value.INTEGER).String()),
 			value.FromValue(val),
 		), nil
 	case v.OBJ_RESPONSE:
@@ -422,7 +430,7 @@ func (fv *FastlyVariable) Set(name string, val *value.Value) (*value.Value, erro
 	case v.RESP_STATUS:
 		return value.NewValue(
 			value.STRING,
-			fmt.Sprintf("ctx.Response.StatusCode = %s", val.Conversion(value.INTEGER).String()),
+			fmt.Sprintf("ctx.Response.StatusCode = int(%s)", val.Conversion(value.INTEGER).String()),
 			value.FromValue(val),
 		), nil
 	}

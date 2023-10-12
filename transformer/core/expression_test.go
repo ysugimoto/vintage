@@ -68,10 +68,10 @@ func TestTransformExpression(t *testing.T) {
 		},
 		{
 			input: `set req.http.Foo = if(req.http.Bar, "hoge", "huga");`,
-			expect: value.NewValue(value.STRING, "tmp__fixed", value.Prepare(
-				`tmp__fixed := "huga"`,
+			expect: value.NewValue(value.STRING, "v__fixed", value.Prepare(
+				`v__fixed := "huga"`,
 				`if vintage.ToBool(ctx.RequestHeader.Get("Bar")) {`,
-				`tmp__fixed = "hoge"`,
+				`v__fixed = "hoge"`,
 				`}`,
 			)),
 		},
@@ -105,8 +105,8 @@ func TestTransformExpression(t *testing.T) {
 		},
 		{
 			input: `set req.http.Foo = ("foobar" ~ "bar");`,
-			expect: value.NewValue(value.STRING, "vintage.ToString((tmp__fixed))", value.Prepare(
-				`tmp__fixed, err := re.Match("bar", "foobar")`,
+			expect: value.NewValue(value.STRING, "vintage.ToString((v__fixed))", value.Prepare(
+				`v__fixed, err := re.Match(`+"`bar`"+`, "foobar")`,
 				value.ErrorCheck,
 			)),
 		},
@@ -127,8 +127,8 @@ func TestTransformExpression(t *testing.T) {
 		},
 		{
 			input: `set req.http.Foo = substr(req.http.Bar, 1);`,
-			expect: value.NewValue(value.STRING, "tmp__fixed", value.Prepare(
-				`tmp__fixed, err := builtin.Substr(ctx.Runtime, ctx.RequestHeader.Get("Bar"), 1)`,
+			expect: value.NewValue(value.STRING, "v__fixed", value.Prepare(
+				`v__fixed, err := function.Substr(ctx.Runtime, ctx.RequestHeader.Get("Bar"), 1)`,
 				value.ErrorCheck,
 			)),
 		},
@@ -170,15 +170,15 @@ func TestTransformIdentValue(t *testing.T) {
 	}{
 		{
 			input:  `test_backend`,
-			expect: value.NewValue(value.BACKEND, "backend__test_backend"),
+			expect: value.NewValue(value.BACKEND, "B__test_backend"),
 		},
 		{
 			input:  `test_acl`,
-			expect: value.NewValue(value.ACL, "acl__test_acl"),
+			expect: value.NewValue(value.ACL, "A__test_acl"),
 		},
 		{
 			input:  `test_table`,
-			expect: value.NewValue(value.IDENT, "table__test_table"),
+			expect: value.NewValue(value.IDENT, "T__test_table"),
 		},
 		{
 			input:  `var.FOO`,
@@ -186,7 +186,7 @@ func TestTransformIdentValue(t *testing.T) {
 		},
 		{
 			input:  `re.group.1`,
-			expect: value.NewValue(value.STRING, "re.RegexpMatchedGroup.At(1)"),
+			expect: value.NewValue(value.STRING, "re.At(1)"),
 		},
 		{
 			input:  `aes256`,
@@ -204,9 +204,9 @@ func TestTransformIdentValue(t *testing.T) {
 
 	for _, tt := range tests {
 		tr := NewCoreTransfromer()
-		tr.backends["test_backend"] = value.NewValue(value.BACKEND, "backend__test_backend")
-		tr.acls["test_acl"] = value.NewValue(value.ACL, "acl__test_acl")
-		tr.tables["test_table"] = value.NewValue(value.IDENT, "table__test_table")
+		tr.backends["test_backend"] = value.NewValue(value.BACKEND, "B__test_backend")
+		tr.acls["test_acl"] = value.NewValue(value.ACL, "A__test_acl")
+		tr.tables["test_table"] = value.NewValue(value.IDENT, "T__test_table")
 		tr.vars["var.FOO"] = value.NewValue(value.STRING, "local__FOO")
 		ident := &ast.Ident{
 			Value: tt.input,

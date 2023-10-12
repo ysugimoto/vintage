@@ -35,7 +35,7 @@ acl example {
 	}
 
 	expect := `
-var acl__example = vintage.NewAcl("example",
+var A_example = vintage.NewAcl("example",
 	vintage.AclEntry("192.168.0.1/32", false),
 	vintage.AclEntry("192.168.0.2/32", true),
 )
@@ -71,7 +71,7 @@ backend example {
 		return
 	}
 	expect := `
-var backend__example = vintage.NewBackend("example",
+var B_example = vintage.NewBackend("example",
 	vintage.BackendDefault(),
 	vintage.BackendHost("example.com"),
 )
@@ -105,7 +105,7 @@ director example client {
 		return
 	}
 	expect := `
-var director__example = vintage.NewDirector("example", "client",
+var D_example = vintage.NewDirector("example", "client",
 	vintage.DirectorProperty("quorum", "20%"),
 	vintage.DirectorBackend(
 		vintage.DirectorProperty("backend", "foo"),
@@ -141,7 +141,7 @@ table example STRING {
 		return
 	}
 	expect := `
-var table__example = vintage.NewTable("example", "STRING",
+var T_example = vintage.NewTable("example", "STRING",
 	vintage.TableItem("foo", "bar"),
 )
 `

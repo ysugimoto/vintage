@@ -33,7 +33,7 @@ func (r *TestRuntime) CreateObjectResponse(statusCode int, body string) (vintage
 	return vintage.RawHeader(map[string][]string{}), nil
 }
 
-func (r *TestRuntime) Proxy(ctx context.Context, backend *vintage.Backend) (vintage.RawHeader, error) {
+func (r *TestRuntime) Proxy(ctx context.Context, backend string) (vintage.RawHeader, error) {
 	return vintage.RawHeader(map[string][]string{}), nil
 }
 

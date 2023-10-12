@@ -134,9 +134,10 @@ func AclEntry(cidr string, inverse bool) AclOption {
 }
 
 type Table struct {
-	Name  string
-	Type  string
-	Items map[string]any
+	Name             string
+	Type             string
+	Items            map[string]any
+	isEdgeDictionary bool
 }
 
 type TableOption func(t *Table)
@@ -144,6 +145,12 @@ type TableOption func(t *Table)
 func TableItem(name string, value any) TableOption {
 	return func(t *Table) {
 		t.Items[name] = value
+	}
+}
+
+func EdgeDictionary() TableOption {
+	return func(t *Table) {
+		t.isEdgeDictionary = true
 	}
 }
 
@@ -158,6 +165,10 @@ func NewTable(name, itemType string, items ...TableOption) *Table {
 		items[i](t)
 	}
 	return t
+}
+
+func (t *Table) IsEdgeDictionary() bool {
+	return t.isEdgeDictionary
 }
 
 type LoggingEndpoint struct {

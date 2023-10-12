@@ -133,7 +133,7 @@ func (d *Director) chash(ident RequestIdentity) string {
 	}
 
 	for _, v := range d.Backends {
-		backend := v["backend"].(string)
+		backend := v["backend"].(string) // nolint:errcheck
 		// typically loop three times in order to find suitable ring position
 		for i := 0; i < 3; i++ {
 			buf := make([]byte, 4)
@@ -185,7 +185,7 @@ func (d *Director) getBackendByHash(hash []byte) string {
 		num := binary.BigEndian.Uint64(hash[:8]) % max
 
 		for _, v := range d.Backends {
-			backend := v["backend"].(string)
+			backend := v["backend"].(string) // nolint:errcheck
 			bh := sha256.Sum256([]byte(backend))
 			b := binary.BigEndian.Uint64(bh[:8])
 			if b%(max*10) >= num && b%(max*10) < num+max {
@@ -198,7 +198,7 @@ DETERMINED:
 
 	// When target is not determined, use first healthy backend
 	if target == "" {
-		target = d.Backends[0]["backend"].(string)
+		target = d.Backends[0]["backend"].(string) // nolint:errcheck
 	}
 	return target
 }

@@ -32,7 +32,9 @@ func (tf *CoreTransformer) transformExpression(
 	case *ast.Float:
 		v = value.NewValue(value.FLOAT, t.GetMeta().Token.Literal)
 	case *ast.String:
-		v = value.NewValue(value.STRING, `"`+t.Value+`"`)
+		val := strings.ReplaceAll(t.Value, "\\", "\\\\")
+		val = strings.ReplaceAll(val, `"`, `\"`)
+		v = value.NewValue(value.STRING, `"`+val+`"`)
 	case *ast.RTime:
 		var val time.Duration
 		switch {
@@ -107,7 +109,7 @@ func (tf *CoreTransformer) transformIdentValue(ident *ast.Ident) (*value.Value, 
 		}
 		return value.NewValue(
 			value.STRING,
-			fmt.Sprintf("re.RegexpMatchedGroup.At(%s)", index),
+			fmt.Sprintf("re.At(%s)", index),
 		), nil
 	} else if _, ok := Identifiers[name]; ok {
 		return value.NewValue(value.IDENT, name), nil
@@ -124,21 +126,19 @@ func (tf *CoreTransformer) transformPrefixExpression(expr *ast.PrefixExpression)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		right.Code = "!" + right.Code
-		return right, nil
+		return value.NewValue(right.Type, "!"+right.Code, value.FromValue(right)), nil
 	case "-":
 		right, err := tf.transformExpression(value.NULL, expr.Right)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		right.Code = "-" + right.Code
-		return right, nil
+		return value.NewValue(right.Type, "-"+right.Code, value.FromValue(right)), nil
 	case "+":
 		right, err := tf.transformExpression(value.STRING, expr.Right)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		return right, nil
+		return value.NewValue(right.Type, right.Code, value.FromValue(right)), nil
 	}
 	return nil, TransformError(&expr.GetMeta().Token, "Unexpected prefix operator found: %s", expr.Operator)
 }
@@ -230,13 +230,15 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 
 		// Otherwise, string matching with regular expression
 		tmp := value.Temporary()
+		// On Go regexp, string should be wrapped back quote to avoid unescape string
+		regexpString := "`" + strings.Trim(right.String(), `"`) + "`"
 		return value.NewValue(
 			value.BOOL,
 			tmp,
 			value.Prepare(
 				left.Prepare,
 				right.Prepare,
-				fmt.Sprintf("%s, err := re.Match(%s, %s)", tmp, right.String(), left.String()),
+				fmt.Sprintf("%s, err := re.Match(%s, %s)", tmp, regexpString, left.String()),
 				value.ErrorCheck,
 			),
 		), nil
@@ -308,7 +310,7 @@ func (tf *CoreTransformer) transformFunctionCallExpression(
 		))
 	}
 
-	tf.Packages.Add("github.com/ysugimoto/vintage/builtin", "")
+	tf.Packages.Add("github.com/ysugimoto/vintage/function", "")
 	var prepares string
 	var arguments []string
 	var argIndex int

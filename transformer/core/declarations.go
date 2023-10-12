@@ -134,6 +134,24 @@ func (tf *CoreTransformer) transformTable(table *ast.TableDeclaration) []byte {
 	return buf.Bytes()
 }
 
+func (tf *CoreTransformer) transformEdgeDictionary(table *ast.TableDeclaration) []byte {
+	var buf bytes.Buffer
+
+	name := table.Name.String()
+	tf.tables[name] = value.NewValue(value.IDENT, "T_"+name)
+
+	// On Edge Dictionary table type always STRING
+	buf.WriteString(
+		fmt.Sprintf(
+			`var T_%s = vintage.NewTable("%s", "%s", vintage.EdgeDictionary()) // EdgeDictionary`+lineFeed,
+			name,
+			name,
+			"STRING", // EdgeDictionary table item type always STRING
+		),
+	)
+	return buf.Bytes()
+}
+
 func (tf *CoreTransformer) transformSubroutine(sub *ast.SubroutineDeclaration) ([]byte, error) {
 	var buf bytes.Buffer
 
