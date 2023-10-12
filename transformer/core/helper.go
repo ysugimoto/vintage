@@ -46,3 +46,26 @@ func toString(expr ast.Expression) string {
 	}
 	return ""
 }
+
+type RegexMatchedGroupStack struct {
+	groups []string
+}
+
+func (r *RegexMatchedGroupStack) Push(v string) {
+	r.groups = append(r.groups, v)
+}
+
+func (r *RegexMatchedGroupStack) Pop() {
+	if len(r.groups) > 1 {
+		r.groups = r.groups[:len(r.groups)-1]
+	} else {
+		r.groups = []string{}
+	}
+}
+
+func (r *RegexMatchedGroupStack) Last() string {
+	if len(r.groups) > 0 {
+		return r.groups[len(r.groups)-1]
+	}
+	return ""
+}

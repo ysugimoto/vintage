@@ -109,7 +109,7 @@ func (tf *CoreTransformer) transformIdentValue(ident *ast.Ident) (*value.Value, 
 		}
 		return value.NewValue(
 			value.STRING,
-			fmt.Sprintf("re.At(%s)", index),
+			fmt.Sprintf("%s.At(%s)", tf.regexMatchedStack.Last(), index),
 		), nil
 	} else if _, ok := Identifiers[name]; ok {
 		return value.NewValue(value.IDENT, name), nil
@@ -238,9 +238,11 @@ func (tf *CoreTransformer) transformInfixExpression(expr *ast.InfixExpression) (
 			value.Prepare(
 				left.Prepare,
 				right.Prepare,
-				fmt.Sprintf("%s, err := re.Match(%s, %s)", tmp, regexpString, left.String()),
+				fmt.Sprintf("%s, %s_group, err := vintage.RegexpMatch(%s, %s)", tmp, tmp, regexpString, left.String()),
 				value.ErrorCheck,
+				fmt.Sprintf("_ = %s_group // implicitly avoid compilation error", tmp),
 			),
+			value.Matches(tmp+"_group"),
 		), nil
 
 	case "||", "&&":

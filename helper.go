@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"regexp"
 	"strconv"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 const httpTime = "Mon, 02 Jan 2006 15:04:05 GMT"
@@ -51,6 +54,20 @@ func ToBool[T Primitive](v T) bool {
 		return t
 	}
 	return false
+}
+
+// RegexpMatch is function that wraps regular expression matching
+// Returns matches result and capture groups
+func RegexpMatch(pattern, subject string) (bool, RegexpMatchedGroup, error) {
+	r, err := regexp.Compile(pattern)
+	if err != nil {
+		return false, nil, errors.WithStack(err)
+	}
+	matches := r.FindStringSubmatch(subject)
+	if matches == nil {
+		return false, nil, nil
+	}
+	return true, RegexpMatchedGroup(matches), nil
 }
 
 // We heavily respect original implementation of github.com/rs/xid.

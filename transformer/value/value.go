@@ -43,6 +43,12 @@ func Deprecated() ValueOption {
 	}
 }
 
+func Matches(m string) ValueOption {
+	return func(e *Value) {
+		e.Matches = m
+	}
+}
+
 func FromValue(v *Value) ValueOption {
 	return func(e *Value) {
 		e.Prepare = v.Prepare + e.Prepare
@@ -62,6 +68,7 @@ type Value struct {
 	Dependencies Packages
 	Comment      string
 	Deprecated   bool
+	Matches      string
 }
 
 func NewValue(t VCLType, code string, preps ...ValueOption) *Value {

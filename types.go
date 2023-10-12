@@ -2,7 +2,6 @@ package vintage
 
 import (
 	"net"
-	"regexp"
 	"time"
 
 	"github.com/pkg/errors"
@@ -66,30 +65,11 @@ type RawHeader map[string][]string
 
 // RegexpMatchedGroup represents regexp matched group values
 // which is stored when "~" or "!~" operator is used
-type RegexpMatchedGroup struct {
-	matches []string
-}
+type RegexpMatchedGroup []string
 
-func (re *RegexpMatchedGroup) Match(pattern, subject string) (bool, error) {
-	r, err := regexp.Compile(pattern)
-	if err != nil {
-		return false, errors.WithStack(err)
-	}
-	matches := r.FindStringSubmatch(subject)
-	if matches == nil {
-		return false, nil
-	}
-	re.matches = matches
-	return true, nil
-}
-
-func (re *RegexpMatchedGroup) At(index int) string {
-	if index >= len(re.matches)-1 || index < 0 {
+func (re RegexpMatchedGroup) At(index int) string {
+	if index > len(re)-1 || index < 0 {
 		return ""
 	}
-	return re.matches[index]
-}
-
-func (re *RegexpMatchedGroup) Release() {
-	re.matches = []string{}
+	return re[index]
 }

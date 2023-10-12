@@ -25,9 +25,10 @@ type CoreTransformer struct {
 	loggingEndpoints    map[string]string
 	Packages            value.Packages
 
-	vars        map[string]*value.Value
-	variables   variable.Variables
-	runtimeName string
+	vars              map[string]*value.Value
+	variables         variable.Variables
+	runtimeName       string
+	regexMatchedStack *RegexMatchedGroupStack
 }
 
 func NewCoreTransfromer(opts ...TransformOption) *CoreTransformer {
@@ -42,8 +43,9 @@ func NewCoreTransfromer(opts ...TransformOption) *CoreTransformer {
 		Packages: value.Packages{
 			"github.com/ysugimoto/vintage": {},
 		},
-		variables:   NewCoreVariables(),
-		runtimeName: "core.Runtime",
+		variables:         NewCoreVariables(),
+		runtimeName:       "core.Runtime",
+		regexMatchedStack: &RegexMatchedGroupStack{},
 	}
 	for i := range opts {
 		opts[i](t)

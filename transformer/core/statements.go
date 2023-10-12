@@ -431,34 +431,40 @@ func (tf *CoreTransformer) transformIfStatement(stmt *ast.IfStatement) ([]byte, 
 	}
 	prepares = append(prepares, []byte(condition.Prepare)...)
 	buf.WriteString(fmt.Sprintf("if %s {"+lineFeed, condition.String()))
+	tf.regexMatchedStack.Push(condition.Matches)
 	consequence, _, err := tf.transformBlockStatement(stmt.Consequence.Statements)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	tf.regexMatchedStack.Pop()
 	buf.Write(consequence)
 	buf.WriteString("}")
 
 	for _, elseif := range stmt.Another {
-		condition, err := tf.transformExpression(value.BOOL, elseif.Condition)
+		c, err := tf.transformExpression(value.BOOL, elseif.Condition)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		prepares = append(prepares, []byte(condition.Prepare)...)
-		buf.WriteString(fmt.Sprintf(" else if %s {"+lineFeed, condition.String()))
+		prepares = append(prepares, []byte(c.Prepare)...)
+		buf.WriteString(fmt.Sprintf(" else if %s {"+lineFeed, c.String()))
+		tf.regexMatchedStack.Push(c.Matches)
 		consequence, _, err := tf.transformBlockStatement(elseif.Consequence.Statements)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
+		tf.regexMatchedStack.Pop()
 		buf.Write(consequence)
 		buf.WriteString("}")
 	}
 
 	if stmt.Alternative != nil {
 		buf.WriteString(" else {" + lineFeed)
+		tf.regexMatchedStack.Push(condition.Matches)
 		alternative, _, err := tf.transformBlockStatement(stmt.Alternative.Statements)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
+		tf.regexMatchedStack.Pop()
 		buf.Write(alternative)
 		buf.WriteString("}")
 	}
