@@ -16,15 +16,15 @@ func TestTransformDeclareStatement(t *testing.T) {
 		input  string
 		expect string
 	}{
-		{input: `declare local var.Foo STRING;`, expect: "var local__Foo string"},
-		{input: `declare local var.Foo INTEGER;`, expect: "var local__Foo int64"},
-		{input: `declare local var.Foo FLOAT;`, expect: "var local__Foo float64"},
-		{input: `declare local var.Foo BOOL;`, expect: "var local__Foo bool"},
-		{input: `declare local var.Foo IP;`, expect: "var local__Foo net.IP"},
-		{input: `declare local var.Foo RTIME;`, expect: "var local__Foo time.Duration"},
-		{input: `declare local var.Foo TIME;`, expect: "var local__Foo time.Time"},
-		{input: `declare local var.Foo BACKEND;`, expect: "var local__Foo *vintage.Backend"},
-		{input: `declare local var.Foo ACL;`, expect: "var local__Foo *vintage.Acl"},
+		{input: `declare local var.Foo STRING;`, expect: "var l_Foo string"},
+		{input: `declare local var.Foo INTEGER;`, expect: "var l_Foo int64"},
+		{input: `declare local var.Foo FLOAT;`, expect: "var l_Foo float64"},
+		{input: `declare local var.Foo BOOL;`, expect: "var l_Foo bool"},
+		{input: `declare local var.Foo IP;`, expect: "var l_Foo net.IP"},
+		{input: `declare local var.Foo RTIME;`, expect: "var l_Foo time.Duration"},
+		{input: `declare local var.Foo TIME;`, expect: "var l_Foo time.Time"},
+		{input: `declare local var.Foo BACKEND;`, expect: "var l_Foo *vintage.Backend"},
+		{input: `declare local var.Foo ACL;`, expect: "var l_Foo *vintage.Acl"},
 	}
 
 	for _, tt := range tests {
@@ -76,7 +76,7 @@ func TestTransformSetStatement(t *testing.T) {
 		isError bool
 	}{
 		{input: `set req.http.Foo = "bar";`, expect: `ctx.RequestHeader.Set("Foo", "bar")`},
-		{input: `set var.Foo = "bar";`, expect: `local__Foo = "bar"`},
+		{input: `set var.Foo = "bar";`, expect: `l_Foo = "bar"`},
 		{input: `set client.socket.congestion_algorithm = "cubic";`, expect: `ctx.ClientSocketCongestionAlgorithm = "cubic"`},
 		{input: `set var.Hoge = "huga";`, isError: true},
 		{input: `set client.some.undefined_variable = 100;`, isError: true},
@@ -88,7 +88,7 @@ func TestTransformSetStatement(t *testing.T) {
 			continue
 		}
 		tr := NewCoreTransfromer()
-		tr.vars["var.Foo"] = value.NewValue(value.STRING, "local__Foo")
+		tr.vars["var.Foo"] = value.NewValue(value.STRING, "l_Foo")
 		code, err := tr.transformSetStatement(stmt[0].(*ast.SetStatement))
 		if tt.isError {
 			if err == nil {
@@ -333,10 +333,10 @@ func TestTransformCallStatement(t *testing.T) {
 		{
 			input: `call custom_subroutine;`,
 			expect: strings.Join([]string{
-				"if v__fixed, err := custom_subroutine(ctx); err != nil {",
+				"if v_fixed, err := custom_subroutine(ctx); err != nil {",
 				"return vintage.NONE, err",
-				"} else if v__fixed != vintage.NONE {",
-				"return v__fixed, nil",
+				"} else if v_fixed != vintage.NONE {",
+				"return v_fixed, nil",
 				"}",
 			}, "\n"),
 		},

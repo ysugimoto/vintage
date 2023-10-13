@@ -68,10 +68,10 @@ func TestTransformExpression(t *testing.T) {
 		},
 		{
 			input: `set req.http.Foo = if(req.http.Bar, "hoge", "huga");`,
-			expect: value.NewValue(value.STRING, "v__fixed", value.Prepare(
-				`v__fixed := "huga"`,
+			expect: value.NewValue(value.STRING, "v_fixed", value.Prepare(
+				`v_fixed := "huga"`,
 				`if vintage.ToBool(ctx.RequestHeader.Get("Bar")) {`,
-				`v__fixed = "hoge"`,
+				`v_fixed = "hoge"`,
 				`}`,
 			)),
 		},
@@ -105,10 +105,10 @@ func TestTransformExpression(t *testing.T) {
 		},
 		{
 			input: `set req.http.Foo = ("foobar" ~ "bar");`,
-			expect: value.NewValue(value.STRING, "vintage.ToString((v__fixed))", value.Prepare(
-				`v__fixed, v__fixed_group, err := vintage.RegexpMatch(`+"`bar`"+`, "foobar")`,
+			expect: value.NewValue(value.STRING, "vintage.ToString((v_fixed))", value.Prepare(
+				`v_fixed, v_fixed_group, err := vintage.RegexpMatch(`+"`bar`"+`, "foobar")`,
 				value.ErrorCheck,
-				`_ = v__fixed_group // implicitly avoid compilation error`,
+				`_ = v_fixed_group // implicitly avoid compilation error`,
 			)),
 		},
 		{
@@ -128,8 +128,8 @@ func TestTransformExpression(t *testing.T) {
 		},
 		{
 			input: `set req.http.Foo = substr(req.http.Bar, 1);`,
-			expect: value.NewValue(value.STRING, "v__fixed", value.Prepare(
-				`v__fixed, err := function.Substr(ctx.Runtime, ctx.RequestHeader.Get("Bar"), 1)`,
+			expect: value.NewValue(value.STRING, "v_fixed", value.Prepare(
+				`v_fixed, err := function.Substr(ctx.Runtime, ctx.RequestHeader.Get("Bar"), 1)`,
 				value.ErrorCheck,
 			)),
 		},

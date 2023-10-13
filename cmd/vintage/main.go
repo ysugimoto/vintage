@@ -14,6 +14,11 @@ import (
 	"github.com/ysugimoto/vintage/transformer/native"
 )
 
+const (
+	targetCompute = "compute"
+	targetNative  = "native"
+)
+
 func main() {
 	if err := _main(); err != nil {
 		panic(err)
@@ -51,9 +56,9 @@ func _main() error {
 
 	var transformer core.Transformer
 	switch c.Target {
-	case "compute":
+	case targetCompute:
 		transformer = fastly.NewFastlyTransformer(options...)
-	case "native":
+	case targetNative:
 		transformer = native.NewNativeTransformer(options...)
 	default:
 		return fmt.Errorf(`Target %s is not supported. Only supports "compute" or "native"`+"\n", c.Target)

@@ -11,10 +11,10 @@ func UseFixedTemporalValue() {
 
 func Temporary() string {
 	if useFixedName {
-		return "v__fixed"
+		return "v_fixed"
 	}
 	temporaryVarCount++
-	return fmt.Sprintf("v__%d", temporaryVarCount)
+	return fmt.Sprintf("v_%d", temporaryVarCount)
 }
 
 var ErrorCheck = "if err != nil {\nreturn vintage.NONE, err\n}"

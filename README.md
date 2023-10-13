@@ -31,7 +31,7 @@ Supprted runtimes, which can specify on `-t, --target` cli option are following:
 - `compute (default)` : Fastly Compute Runtime, the generated code could run in Compute@Edge
 - `native` : Generates raw Golang code, could run in common platforms that Golang can compile to
 
-## Use Generated Program
+## Run Application
 
 After transpilation succeeded, you can get single go file that at `--output` cli option.
 The generated file exposes `VclHandler` function that implements server handler corresponds to target platform.
@@ -55,7 +55,29 @@ func main() {
 }
 ```
 
-It's very tiny implementation! After that, you are ready to build and deploy VCL application. 
+On native:
+
+```go
+package main
+
+import (
+	"net/http"
+)
+
+func main() {
+    http.Handle("/", VclHandler())
+    http.ListenAndServe(":8888", nil)
+}
+```
+
+It's very tiny implementation! The handle has common Golang HTTP handler interface, of course you can combinate with HTTP middlewares, your favorite HTTP framework.
+
+Note that on Fastly Compute Runtime, some packages are limited to use so ensure your framework or library can use in Compute Runtime.
+
+## Welcome Feedback!
+
+We tested many kind of VCLs (production use, massive lines and include modules), they could work fine but it's not enough.
+If you can try `vintage` in your VCLs and found any problems or weired behavior, we welcome your feedback on an issue.
 
 ## Contribution
 

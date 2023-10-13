@@ -69,32 +69,32 @@ func (tf *CoreTransformer) transformDeclareStatement(stmt *ast.DeclareStatement)
 	name := strings.TrimPrefix(stmt.Name.Value, "var.")
 	switch value.VCLType(stmt.ValueType.Value) {
 	case value.STRING:
-		buf.WriteString(fmt.Sprintf("var local__%s string", name))
-		tf.vars[stmt.Name.Value] = value.NewValue(value.STRING, "local__"+name)
+		buf.WriteString(fmt.Sprintf("var l_%s string", name))
+		tf.vars[stmt.Name.Value] = value.NewValue(value.STRING, "l_"+name)
 	case value.INTEGER:
-		buf.WriteString(fmt.Sprintf("var local__%s int64", name))
-		tf.vars[stmt.Name.Value] = value.NewValue(value.INTEGER, "local__"+name)
+		buf.WriteString(fmt.Sprintf("var l_%s int64", name))
+		tf.vars[stmt.Name.Value] = value.NewValue(value.INTEGER, "l_"+name)
 	case value.BOOL:
-		buf.WriteString(fmt.Sprintf("var local__%s bool", name))
-		tf.vars[stmt.Name.Value] = value.NewValue(value.BOOL, "local__"+name)
+		buf.WriteString(fmt.Sprintf("var l_%s bool", name))
+		tf.vars[stmt.Name.Value] = value.NewValue(value.BOOL, "l_"+name)
 	case value.FLOAT:
-		buf.WriteString(fmt.Sprintf("var local__%s float64", name))
-		tf.vars[stmt.Name.Value] = value.NewValue(value.FLOAT, "local__"+name)
+		buf.WriteString(fmt.Sprintf("var l_%s float64", name))
+		tf.vars[stmt.Name.Value] = value.NewValue(value.FLOAT, "l_"+name)
 	case value.BACKEND:
-		buf.WriteString(fmt.Sprintf("var local__%s *vintage.Backend", name))
-		tf.vars[stmt.Name.Value] = value.NewValue(value.BACKEND, "local__"+name)
+		buf.WriteString(fmt.Sprintf("var l_%s *vintage.Backend", name))
+		tf.vars[stmt.Name.Value] = value.NewValue(value.BACKEND, "l_"+name)
 	case value.IP:
-		buf.WriteString(fmt.Sprintf("var local__%s net.IP", name))
-		tf.vars[stmt.Name.Value] = value.NewValue(value.IP, "local__"+name)
+		buf.WriteString(fmt.Sprintf("var l_%s net.IP", name))
+		tf.vars[stmt.Name.Value] = value.NewValue(value.IP, "l_"+name)
 	case value.RTIME:
-		buf.WriteString(fmt.Sprintf("var local__%s time.Duration", name))
-		tf.vars[stmt.Name.Value] = value.NewValue(value.RTIME, "local__"+name)
+		buf.WriteString(fmt.Sprintf("var l_%s time.Duration", name))
+		tf.vars[stmt.Name.Value] = value.NewValue(value.RTIME, "l_"+name)
 	case value.TIME:
-		buf.WriteString(fmt.Sprintf("var local__%s time.Time", name))
-		tf.vars[stmt.Name.Value] = value.NewValue(value.TIME, "local__"+name)
+		buf.WriteString(fmt.Sprintf("var l_%s time.Time", name))
+		tf.vars[stmt.Name.Value] = value.NewValue(value.TIME, "l_"+name)
 	case value.ACL:
-		buf.WriteString(fmt.Sprintf("var local__%s *vintage.Acl", name))
-		tf.vars[stmt.Name.Value] = value.NewValue(value.ACL, "local__"+name)
+		buf.WriteString(fmt.Sprintf("var l_%s *vintage.Acl", name))
+		tf.vars[stmt.Name.Value] = value.NewValue(value.ACL, "l_"+name)
 	default:
 		return nil, errors.WithStack(
 			fmt.Errorf("Unexpected variable type declared: %s", stmt.ValueType.Value),
