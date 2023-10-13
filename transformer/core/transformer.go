@@ -30,6 +30,9 @@ type CoreTransformer struct {
 	regexMatchedStack *RegexMatchedGroupStack
 	runtimeName       string
 	outputPackageName string
+
+	// Fastly platform support flag
+	supportEdgeDictionary bool
 }
 
 func NewCoreTransfromer(opts ...TransformOption) *CoreTransformer {
@@ -45,7 +48,7 @@ func NewCoreTransfromer(opts ...TransformOption) *CoreTransformer {
 			"github.com/ysugimoto/vintage": {},
 		},
 		variables:         NewCoreVariables(),
-		runtimeName:       "core.Runtime",
+		runtimeName:       "core",
 		regexMatchedStack: &RegexMatchedGroupStack{},
 		outputPackageName: "main",
 	}
@@ -115,11 +118,13 @@ func (tf *CoreTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 			// On table transformation, we need to care about EdgeDictionary.
 			// If ast filename has "Remote.EdgeDictionary" string,
 			// the table is an EdgeDictionary which is manged in Fastly remote
-			// and then we generate code using compute-sdk-go/edgedict package.
-			if strings.Contains(s.Meta.Token.File, "Remote.EdgeDictionary") {
+			// and then we generate code using compute-sdk-go/configstore package.
+			isEdgeDictionary := strings.Contains(s.Meta.Token.File, "Remote.EdgeDictionary")
+			if tf.supportEdgeDictionary && isEdgeDictionary {
 				code = tf.transformEdgeDictionary(s)
 			} else {
-				// Otherwise, case of user defined table, transform as Table declaration
+				// Otherwise, case of user defined table or could not support EdgeDictionary,
+				// transform as Table declaration
 				code = tf.transformTable(s)
 			}
 		case *ast.SubroutineDeclaration:
@@ -127,6 +132,8 @@ func (tf *CoreTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 			subroutines = append(subroutines, s)
 		case *ast.ImportStatement:
 			// Nothing to to for import statement
+			break
+
 		// Currently we don't support penaltybox and ratecounter
 		// case *ast.PenaltyboxDeclaration:
 		// case *ast.RatecounterDeclaration:

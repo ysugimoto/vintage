@@ -27,7 +27,9 @@ func DirectorProperty(key string, value any) DirectorOption {
 
 func DirectorBackend(opts ...DirectorOption) DirectorOption {
 	return func(d *Director) {
-		inner := &Director{}
+		inner := &Director{
+			Properties: make(map[string]any),
+		}
 		for i := range opts {
 			opts[i](inner)
 		}
@@ -37,7 +39,9 @@ func DirectorBackend(opts ...DirectorOption) DirectorOption {
 
 func NewDirector(name string, dType DirectorType, opts ...DirectorOption) *Backend {
 	d := &Director{
-		Type: dType,
+		Type:       dType,
+		Properties: make(map[string]any),
+		Backends:   []map[string]any{},
 	}
 	for i := range opts {
 		opts[i](d)

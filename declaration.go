@@ -1,10 +1,10 @@
 package vintage
 
 import (
+	"io"
 	"net"
 	"time"
 
-	"github.com/fastly/compute-sdk-go/rtlog"
 	"github.com/pkg/errors"
 )
 
@@ -14,6 +14,7 @@ type Backend struct {
 	Port                string
 	Host                string
 	SSL                 bool
+	AlwaysUseHostHeader bool
 	ConnectTimeout      time.Duration
 	FirstByteTimeout    time.Duration
 	BetweenBytesTimeout time.Duration
@@ -81,6 +82,12 @@ func BackendFirstByteTimeout(t time.Duration) BackendOption {
 func BackendBetweenBytesTimeout(t time.Duration) BackendOption {
 	return func(b *Backend) {
 		b.BetweenBytesTimeout = t
+	}
+}
+
+func BackendAlwaysUseHostHeader(v bool) BackendOption {
+	return func(b *Backend) {
+		b.AlwaysUseHostHeader = v
 	}
 }
 
@@ -172,22 +179,23 @@ func (t *Table) IsEdgeDictionary() bool {
 }
 
 type LoggingEndpoint struct {
-	Name     string
-	endpoint *rtlog.Endpoint
+	Name      string
+	initiator LoggerInitiator
 }
 
-func NewLoggingEndpoint(name string) *LoggingEndpoint {
+func NewLoggingEndpoint(name string, initiator LoggerInitiator) *LoggingEndpoint {
 	return &LoggingEndpoint{
-		Name: name,
-		// Not open until actually write log message
+		Name:      name,
+		initiator: initiator,
 	}
 }
 
 func (l *LoggingEndpoint) Write(message string) error {
-	if l.endpoint == nil {
-		l.endpoint = rtlog.Open(l.Name)
+	w, err := l.initiator(l.Name)
+	if err != nil {
+		return errors.WithStack(err)
 	}
-	if _, err := l.endpoint.Write([]byte(message)); err != nil {
+	if _, err := io.WriteString(w, message); err != nil {
 		return errors.WithStack(err)
 	}
 	return nil

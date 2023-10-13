@@ -13,6 +13,7 @@ type Config struct {
 	Output       string   `cli:"o,output" default:"./vintage.go"`
 	Help         bool     `cli:"h,help"`
 	IncludePaths []string `cli:"I,include_path"`
+	Overwrite    bool     `cli:"overwrite"`
 
 	ServiceId  string `env:"FASTLY_SERVICE_ID"`
 	ApiToken   string `env:"FASTLY_API_TOKEN"`
@@ -52,6 +53,10 @@ func newConfig(args []string) (*Config, error) {
 var needValueOptions = map[string]struct{}{
 	"-I":             {},
 	"--include_path": {},
+	"-t":             {},
+	"--target":       {},
+	"-o":             {},
+	"--output":       {},
 }
 
 func toAbsolutePaths(paths []string) ([]string, error) {

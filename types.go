@@ -1,6 +1,7 @@
 package vintage
 
 import (
+	"io"
 	"net"
 	"time"
 
@@ -73,3 +74,12 @@ func (re RegexpMatchedGroup) At(index int) string {
 	}
 	return re[index]
 }
+
+// Define Logger interface to switch native logger that is provided by log package
+// or Fastly logger that is provided by compute-sdk-go/rtlog package
+type Logger interface {
+	Write(message []byte) error
+}
+
+// Logger interface creator function in order to inject Logger interface from each runtimes
+type LoggerInitiator func(name string) (io.Writer, error)

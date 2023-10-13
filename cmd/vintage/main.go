@@ -11,6 +11,7 @@ import (
 	"github.com/ysugimoto/vintage/errors"
 	"github.com/ysugimoto/vintage/transformer/core"
 	"github.com/ysugimoto/vintage/transformer/fastly"
+	"github.com/ysugimoto/vintage/transformer/native"
 )
 
 func main() {
@@ -30,10 +31,6 @@ func _main() error {
 		os.Exit(1)
 	}
 
-	if c.Target != "compute" {
-		return fmt.Errorf("Target %s is not supported for now. Only supports 'compute' only\n", c.Target)
-	}
-
 	rslv, err := resolver.NewFileResolvers(c.EntryPoint, c.IncludePaths)
 	if err != nil {
 		return errors.WithStack(err)
@@ -46,11 +43,23 @@ func _main() error {
 	if err := s.FetchLoggingEndpoint(fetcher); err != nil {
 		return errors.WithStack(err)
 	}
+
 	options := []core.TransformOption{
 		core.WithSnippets(s),
 		core.WithOutputPackage(c.Package),
 	}
-	buf, err := fastly.NewFastlyTransformer(options...).Transform(rslv[0])
+
+	var transformer core.Transformer
+	switch c.Target {
+	case "compute":
+		transformer = fastly.NewFastlyTransformer(options...)
+	case "native":
+		transformer = native.NewNativeTransformer(options...)
+	default:
+		return fmt.Errorf(`Target %s is not supported. Only supports "compute" or "native"`+"\n", c.Target)
+	}
+
+	buf, err := transformer.Transform(rslv[0])
 	if err != nil {
 		return errors.WithStack(err)
 	}

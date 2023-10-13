@@ -30,3 +30,9 @@ func WithOutputPackage(v string) TransformOption {
 		t.outputPackageName = v
 	}
 }
+
+func WithFastlyPlatform() TransformOption {
+	return func(t *CoreTransformer) {
+		t.supportEdgeDictionary = true
+	}
+}

@@ -22,7 +22,7 @@ func errorHandler(w fsthttp.ResponseWriter, err error) {
 	fmt.Fprint(w, err.Error())
 }
 
-func VclEdgeHander() fsthttp.Handler {
+func VclHander() fsthttp.Handler {
 	return fsthttp.HandlerFunc(func(ctx context.Context, w fsthttp.ResponseWriter, r *fsthttp.Request) {
 		runtime, err := fastly.NewRuntime(w, r)
 		if err != nil {

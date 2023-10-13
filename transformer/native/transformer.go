@@ -1,4 +1,4 @@
-package fastly
+package native
 
 import (
 	"bytes"
@@ -10,32 +10,31 @@ import (
 	"github.com/ysugimoto/vintage/transformer/core"
 )
 
-type FastlyTransformer struct {
+type NativeTransformer struct {
 	*core.CoreTransformer
 }
 
-func NewFastlyTransformer(opts ...core.TransformOption) *FastlyTransformer {
-	// Add Fastly specific variable resolver
+func NewNativeTransformer(opts ...core.TransformOption) *NativeTransformer {
+	// Add Native specific variable resolver
 	opts = append(
 		opts,
-		core.WithVariables(NewFastlyVariable()),
-		core.WithFastlyPlatform(),
-		core.WithRuntimeName("fastly"),
+		core.WithVariables(NewNativeVariable()),
+		core.WithRuntimeName("native"),
 	)
-	f := &FastlyTransformer{
+	f := &NativeTransformer{
 		core.NewCoreTransfromer(opts...),
 	}
-	f.CoreTransformer.Packages.Add("github.com/ysugimoto/vintage/runtime/fastly", "")
-	f.CoreTransformer.Packages.Add("github.com/fastly/compute-sdk-go/fsthttp", "")
+	f.CoreTransformer.Packages.Add("github.com/ysugimoto/vintage/runtime/native", "")
+	f.CoreTransformer.Packages.Add("net/http", "")
 	return f
 }
 
-func (tf *FastlyTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
+func (tf *NativeTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 	buf, err := tf.CoreTransformer.Transform(rslv)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	tmpl := template.Must(template.New("fastly.handler").Parse(handlerTemplate))
+	tmpl := template.Must(template.New("native.handler").Parse(handlerTemplate))
 
 	var out bytes.Buffer
 	vars := tf.CoreTransformer.TemplateVariables()

@@ -66,6 +66,8 @@ func (tf *CoreTransformer) transformBackend(backend *ast.BackendDeclaration) []b
 			buf.WriteString(fmt.Sprintf(`vintage.BackendFirstByteTimeout(%s),`+lineFeed, toString(prop.Value)))
 		case "between_bytes_timeout":
 			buf.WriteString(fmt.Sprintf(`vintage.BackendBetweenBytesTimeout(%s),`+lineFeed, toString(prop.Value)))
+		case "always_use_host_header":
+			buf.WriteString(fmt.Sprintf(`vintage.BackendAlwaysUseHostHeader(%s),`+lineFeed, toString(prop.Value)))
 		}
 	}
 	buf.WriteString(")" + lineFeed)
@@ -159,7 +161,7 @@ func (tf *CoreTransformer) transformSubroutine(sub *ast.SubroutineDeclaration) (
 	if sub.ReturnType != nil {
 		tf.functionSubroutines[name] = value.NewValue(value.VCLType(sub.ReturnType.Value), name)
 		buf.WriteString(fmt.Sprintf(
-			"func %s(ctx *%s) (%s, error) {"+lineFeed,
+			"func %s(ctx *%s.Runtime) (%s, error) {"+lineFeed,
 			name,
 			tf.runtimeName,
 			value.GoTypeString(value.VCLType(sub.ReturnType.Value)),
@@ -176,7 +178,7 @@ func (tf *CoreTransformer) transformSubroutine(sub *ast.SubroutineDeclaration) (
 	tf.subroutines[name] = value.NewValue(value.IDENT, name)
 
 	buf.WriteString(fmt.Sprintf(
-		"func %s(ctx *%s) (vintage.State, error) {"+lineFeed,
+		"func %s(ctx *%s.Runtime) (vintage.State, error) {"+lineFeed,
 		name,
 		tf.runtimeName,
 	))
@@ -200,7 +202,12 @@ func (tf *CoreTransformer) transformLoggingEndpoint(name string) []byte {
 	// Need to replace from "-" to "_" due to name is used on program variable
 	tf.loggingEndpoints[name] = "L_" + strings.ReplaceAll(name, "-", "_")
 	buf.WriteString(
-		fmt.Sprintf(`var %s = vintage.NewLoggingEndpoint("%s")`, tf.loggingEndpoints[name], name),
+		fmt.Sprintf(
+			`var %s = vintage.NewLoggingEndpoint("%s", %s.LoggerInitiator)`,
+			tf.loggingEndpoints[name],
+			name,
+			tf.runtimeName,
+		),
 	)
 	buf.WriteString(lineFeed)
 
