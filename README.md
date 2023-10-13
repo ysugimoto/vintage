@@ -31,7 +31,7 @@ Supprted runtimes, which can specify on `-t, --target` cli option are following:
 - `compute (default)` : Fastly Compute Runtime, the generated code could run in Compute@Edge
 - `native` : Generates raw Golang code, could run in common platforms that Golang can compile to
 
-## Run Application
+## Run Application With Generated Code
 
 After transpilation succeeded, you can get single go file that at `--output` cli option.
 The generated file exposes `VclHandler` function that implements server handler corresponds to target platform.
