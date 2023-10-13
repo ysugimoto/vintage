@@ -164,9 +164,6 @@ func (tf *CoreTransformer) transformSubroutine(sub *ast.SubroutineDeclaration) (
 			tf.runtimeName,
 			value.GoTypeString(value.VCLType(sub.ReturnType.Value)),
 		))
-		buf.WriteString("re := vintage.RegexpMatchedGroup{}" + lineFeed)
-		buf.WriteString("defer re.Release()" + lineFeed)
-		buf.WriteString(lineFeed)
 		inside, _, err := tf.transformBlockStatement(sub.Block.Statements)
 		if err != nil {
 			return nil, errors.WithStack(err)
@@ -183,9 +180,6 @@ func (tf *CoreTransformer) transformSubroutine(sub *ast.SubroutineDeclaration) (
 		name,
 		tf.runtimeName,
 	))
-	buf.WriteString("re := &vintage.RegexpMatchedGroup{}" + lineFeed)
-	buf.WriteString("defer re.Release()" + lineFeed)
-	buf.WriteString(lineFeed)
 	inside, rs, err := tf.transformBlockStatement(sub.Block.Statements)
 	if err != nil {
 		return nil, errors.WithStack(err)

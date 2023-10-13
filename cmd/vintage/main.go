@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -12,16 +13,21 @@ import (
 )
 
 func main() {
-	// rslv, err := resolver.NewFileResolvers("../../example/default.vcl", []string{})
-	rslv, err := resolver.NewFileResolvers("../../../../works/ise-cdn/dist/default.vcl", []string{})
+	c, err := newConfig(os.Args[1:])
 	if err != nil {
 		panic(err)
 	}
-	fetcher := remote.NewFastlyApiFetcher(
-		os.Getenv("FASTLY_SERVICE_ID"),
-		os.Getenv("FASTLY_API_TOKEN"),
-		10*time.Second,
-	)
+
+	if c.Target != "compute" {
+		fmt.Fprintf(os.Stderr, "Target %s is not supported for now. Only supports 'compute' only\n", c.Target)
+		os.Exit(1)
+	}
+
+	rslv, err := resolver.NewFileResolvers(c.EntryPoint, []string{})
+	if err != nil {
+		panic(err)
+	}
+	fetcher := remote.NewFastlyApiFetcher(c.ServiceId, c.ApiToken, 10*time.Second)
 	s, err := snippets.Fetch(fetcher)
 	if err != nil {
 		panic(err)
@@ -29,11 +35,15 @@ func main() {
 	if err := s.FetchLoggingEndpoint(fetcher); err != nil {
 		panic(err)
 	}
-	buf, err := fastly.NewFastlyTransformer(core.WithSnippets(s)).Transform(rslv[0])
+	buf, err := fastly.NewFastlyTransformer(
+		core.WithSnippets(s),
+		core.WithOutputPackage(c.Package),
+	).Transform(rslv[0])
 	if err != nil {
 		panic(err)
 	}
-	fp, err := os.OpenFile("../../../../playground/go-compute-at-edge/vintage.go", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0o644)
+
+	fp, err := os.OpenFile(c.Output, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0o644)
 	if err != nil {
 		panic(err)
 	}

@@ -24,3 +24,9 @@ func WithRuntimeName(v string) TransformOption {
 		t.runtimeName = v
 	}
 }
+
+func WithOutputPackage(v string) TransformOption {
+	return func(t *CoreTransformer) {
+		t.outputPackageName = v
+	}
+}

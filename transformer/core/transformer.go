@@ -27,8 +27,9 @@ type CoreTransformer struct {
 
 	vars              map[string]*value.Value
 	variables         variable.Variables
-	runtimeName       string
 	regexMatchedStack *RegexMatchedGroupStack
+	runtimeName       string
+	outputPackageName string
 }
 
 func NewCoreTransfromer(opts ...TransformOption) *CoreTransformer {
@@ -46,6 +47,7 @@ func NewCoreTransfromer(opts ...TransformOption) *CoreTransformer {
 		variables:         NewCoreVariables(),
 		runtimeName:       "core.Runtime",
 		regexMatchedStack: &RegexMatchedGroupStack{},
+		outputPackageName: "main",
 	}
 	for i := range opts {
 		opts[i](t)
@@ -56,11 +58,12 @@ func NewCoreTransfromer(opts ...TransformOption) *CoreTransformer {
 
 func (tf *CoreTransformer) TemplateVariables() map[string]any {
 	return map[string]any{
-		"Packages":    tf.Packages.Sorted(),
-		"Subroutines": tf.subroutines,
-		"Acls":        tf.acls,
-		"Backends":    tf.backends,
-		"Tables":      tf.tables,
+		"Packages":      tf.Packages.Sorted(),
+		"Subroutines":   tf.subroutines,
+		"Acls":          tf.acls,
+		"Backends":      tf.backends,
+		"Tables":        tf.tables,
+		"OutputPackage": tf.outputPackageName,
 	}
 }
 
