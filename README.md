@@ -29,7 +29,7 @@ Describe CLI option:
 ## Programmable
 
 vintage depends on `falco` so you need to install as dependency.
-Below example tranpiles with Fastly remote snippets (same as CLI implementation):
+Below example tranpiles with Fastly remote snippets:
 
 ```go
 package main

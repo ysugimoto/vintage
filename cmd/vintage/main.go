@@ -8,45 +8,60 @@ import (
 	"github.com/ysugimoto/falco/remote"
 	"github.com/ysugimoto/falco/resolver"
 	"github.com/ysugimoto/falco/snippets"
+	"github.com/ysugimoto/vintage/errors"
 	"github.com/ysugimoto/vintage/transformer/core"
 	"github.com/ysugimoto/vintage/transformer/fastly"
 )
 
 func main() {
-	c, err := newConfig(os.Args[1:])
-	if err != nil {
+	if err := _main(); err != nil {
 		panic(err)
 	}
+}
 
-	if c.Target != "compute" {
-		fmt.Fprintf(os.Stderr, "Target %s is not supported for now. Only supports 'compute' only\n", c.Target)
+func _main() error {
+	c, err := newConfig(os.Args[1:])
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	if c.Help {
+		printHelp()
 		os.Exit(1)
 	}
 
-	rslv, err := resolver.NewFileResolvers(c.EntryPoint, []string{})
+	if c.Target != "compute" {
+		return fmt.Errorf("Target %s is not supported for now. Only supports 'compute' only\n", c.Target)
+	}
+
+	rslv, err := resolver.NewFileResolvers(c.EntryPoint, c.IncludePaths)
 	if err != nil {
-		panic(err)
+		return errors.WithStack(err)
 	}
 	fetcher := remote.NewFastlyApiFetcher(c.ServiceId, c.ApiToken, 10*time.Second)
 	s, err := snippets.Fetch(fetcher)
 	if err != nil {
-		panic(err)
+		return errors.WithStack(err)
 	}
 	if err := s.FetchLoggingEndpoint(fetcher); err != nil {
-		panic(err)
+		return errors.WithStack(err)
 	}
-	buf, err := fastly.NewFastlyTransformer(
+	options := []core.TransformOption{
 		core.WithSnippets(s),
 		core.WithOutputPackage(c.Package),
-	).Transform(rslv[0])
+	}
+	buf, err := fastly.NewFastlyTransformer(options...).Transform(rslv[0])
 	if err != nil {
-		panic(err)
+		return errors.WithStack(err)
 	}
 
 	fp, err := os.OpenFile(c.Output, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0o644)
 	if err != nil {
-		panic(err)
+		return errors.WithStack(err)
 	}
 	defer fp.Close()
-	fp.Write(buf) // nolint:errcheck
+	if _, err := fp.Write(buf); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
