@@ -47,15 +47,15 @@ func toString(expr ast.Expression) string {
 	return ""
 }
 
-type RegexMatchedGroupStack struct {
+type RegexMatchedGroup struct {
 	groups []string
 }
 
-func (r *RegexMatchedGroupStack) Push(v string) {
+func (r *RegexMatchedGroup) Push(v string) {
 	r.groups = append(r.groups, v)
 }
 
-func (r *RegexMatchedGroupStack) Pop() {
+func (r *RegexMatchedGroup) Pop() {
 	if len(r.groups) > 1 {
 		r.groups = r.groups[:len(r.groups)-1]
 	} else {
@@ -63,7 +63,7 @@ func (r *RegexMatchedGroupStack) Pop() {
 	}
 }
 
-func (r *RegexMatchedGroupStack) Last() string {
+func (r *RegexMatchedGroup) Last() string {
 	if len(r.groups) > 0 {
 		return r.groups[len(r.groups)-1]
 	}

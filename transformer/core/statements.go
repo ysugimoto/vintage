@@ -321,7 +321,7 @@ func (tf *CoreTransformer) transformCallStatement(stmt *ast.CallStatement) []byt
 	return buf.Bytes()
 }
 
-// nolint:unparam // stmt may be used for a foture implementation
+// nolint:unparam // statement might be used for a future implementation
 func (tf *CoreTransformer) transformRestartStatement(stmt *ast.RestartStatement) ([]byte, error) {
 	return []byte("return vintage.RESTART, nil"), nil
 }
@@ -347,10 +347,10 @@ func (tf *CoreTransformer) transformErrorStatement(stmt *ast.ErrorStatement) ([]
 	return buf.Bytes(), nil
 }
 
-// nolint:unparam // stmt may be used for a foture implementation
+// nolint:unparam // stmt might be used for a future implementation
 func (tf *CoreTransformer) transformEsiStatement(stmt *ast.EsiStatement) ([]byte, error) {
 	// Nothing to do for ESI
-	return []byte("// Trimmed esi statement"), nil
+	return []byte("/* esi; */"), nil
 }
 
 func (tf *CoreTransformer) transformFunctionCallStatement(stmt *ast.FunctionCallStatement) ([]byte, error) {

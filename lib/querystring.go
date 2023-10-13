@@ -11,14 +11,15 @@ type QueryString struct {
 	Value []string // nil indicates not set in VCL
 }
 
-// We implement original querytring struct in order to maname URL queries keeping its order.
-// url.Values are useful in Golang but Encode() result does not care its order because it is managed in map
-// and always sort by query name. On VCL, we need to keep query raw-order as present, this struct solved them.
+// We implement original querytring struct in order to manage URL queries that keep its present order.
+// url.Values are useful *url.Values.Encode() does not care the order because it is managed in map and is sorted by query name.
+// This struct keeps query present order and we will use this strut for query string manipulation.
 type QueryStrings struct {
 	Prefix string // protocol, host, port, path
 	Items  []*QueryString
 }
 
+// ParseQuery parses raw query string and return QueryStrings pointer
 func ParseQuery(qs string) (*QueryStrings, error) {
 	// Find querystring sign
 	idx := strings.Index(qs, "?")
@@ -40,7 +41,7 @@ func ParseQuery(qs string) (*QueryStrings, error) {
 			return nil, err
 		}
 		if len(sp) == 1 {
-			// e.g ?foo -- equal sign is not preset
+			// e.g ?foo -- equal sign is not present
 			ret.Items = append(ret.Items, &QueryString{Key: key, Value: nil})
 			continue
 		}
@@ -53,6 +54,7 @@ func ParseQuery(qs string) (*QueryStrings, error) {
 	return ret, nil
 }
 
+// Set sets a new query string. If key exists, overwrite it
 func (q *QueryStrings) Set(name, val string) {
 	for i := range q.Items {
 		if q.Items[i].Key != name {
@@ -66,6 +68,7 @@ func (q *QueryStrings) Set(name, val string) {
 	q.Items = append(q.Items, &QueryString{Key: name, Value: []string{val}})
 }
 
+// Add adds a new query string. If key exists, append it
 func (q *QueryStrings) Add(name, val string) {
 	for i := range q.Items {
 		if q.Items[i].Key != name {
@@ -82,6 +85,7 @@ func (q *QueryStrings) Add(name, val string) {
 	q.Items = append(q.Items, &QueryString{Key: name, Value: []string{val}})
 }
 
+// Get gets query string value for key
 func (q *QueryStrings) Get(name string) *string {
 	for i := range q.Items {
 		if q.Items[i].Key != name {
@@ -95,6 +99,7 @@ func (q *QueryStrings) Get(name string) *string {
 	return nil
 }
 
+// Clean filters empty key query string
 func (q *QueryStrings) Clean() {
 	var cleaned []*QueryString
 	for _, v := range q.Items {
@@ -106,6 +111,7 @@ func (q *QueryStrings) Clean() {
 	q.Items = cleaned
 }
 
+// Filter filters query string which filter function returned true
 func (q *QueryStrings) Filter(filter func(name string) bool) {
 	var filtered []*QueryString
 	for _, v := range q.Items {
@@ -124,6 +130,7 @@ const (
 	SortDesc SortMode = "desc"
 )
 
+// Sort sorts key with sort mode (asc or desc)
 func (q *QueryStrings) Sort(mode SortMode) {
 	sort.Slice(q.Items, func(i, j int) bool {
 		v := q.Items[i].Key > q.Items[j].Key
@@ -134,6 +141,7 @@ func (q *QueryStrings) Sort(mode SortMode) {
 	})
 }
 
+// String() implements fmt.Stringer interface, return formatted raw query string
 func (q *QueryStrings) String() string {
 	var buf strings.Builder
 	for i, v := range q.Items {

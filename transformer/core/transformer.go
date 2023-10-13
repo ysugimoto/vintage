@@ -27,7 +27,7 @@ type CoreTransformer struct {
 
 	vars              map[string]*value.Value
 	variables         variable.Variables
-	regexMatchedStack *RegexMatchedGroupStack
+	regexMatchedStack *RegexMatchedGroup
 	runtimeName       string
 	outputPackageName string
 
@@ -48,8 +48,9 @@ func NewCoreTransfromer(opts ...TransformOption) *CoreTransformer {
 			"github.com/ysugimoto/vintage": {},
 		},
 		variables:         NewCoreVariables(),
+		regexMatchedStack: &RegexMatchedGroup{},
+
 		runtimeName:       "core",
-		regexMatchedStack: &RegexMatchedGroupStack{},
 		outputPackageName: "main",
 	}
 	for i := range opts {
@@ -128,7 +129,7 @@ func (tf *CoreTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 				code = tf.transformTable(s)
 			}
 		case *ast.SubroutineDeclaration:
-			// Store subroutine in order to hoisiting other declarations
+			// Store subroutine in order to be enable hoisiting other declarations
 			subroutines = append(subroutines, s)
 		case *ast.ImportStatement:
 			// Nothing to to for import statement
@@ -137,6 +138,7 @@ func (tf *CoreTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 		// Currently we don't support penaltybox and ratecounter
 		// case *ast.PenaltyboxDeclaration:
 		// case *ast.RatecounterDeclaration:
+
 		default:
 			err = fmt.Errorf("Unexpected declaration found: %v", s)
 		}
