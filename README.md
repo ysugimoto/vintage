@@ -21,7 +21,7 @@ vintage transpile --target compute --package main --output vintage.go
 Describe CLI option:
 
 | option name   | required | default                  | description                               |
-|:=============:|:========:|:========================:|:==========================================|
+|:-------------:|:--------:|:------------------------:|:------------------------------------------|
 | -t, --target  | no       | compute (Fastly Compute) | Transpile target of edge platform         |
 | -p, --package | no       | main                     | Go package name of transpiled program     |
 | -o, --output  | no       | vintage.go               | Output filename (must have .go extention) |
