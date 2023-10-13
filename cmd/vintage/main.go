@@ -14,6 +14,8 @@ import (
 	"github.com/ysugimoto/vintage/transformer/native"
 )
 
+var version string = ""
+
 const (
 	targetCompute = "compute"
 	targetNative  = "native"
@@ -33,6 +35,9 @@ func _main() error {
 
 	if c.Help {
 		printHelp()
+		os.Exit(1)
+	} else if c.Version {
+		fmt.Println(version)
 		os.Exit(1)
 	}
 

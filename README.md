@@ -74,7 +74,7 @@ It's very tiny implementation! The handle has common Golang HTTP handler interfa
 
 Note that on Fastly Compute Runtime, some packages are limited to use so ensure your framework or library can use in Compute Runtime.
 
-## Welcome Feedback!
+## Welcome Your Feedback!
 
 We tested many kind of VCLs (production use, massive lines and include modules), they could work fine but it's not enough.
 If you can try `vintage` in your VCLs and found any problems or weired behavior, we welcome your feedback on an issue.

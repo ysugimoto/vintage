@@ -12,6 +12,7 @@ type Config struct {
 	Target       string   `cli:"t,target" default:"compute"`
 	Output       string   `cli:"o,output" default:"./vintage.go"`
 	Help         bool     `cli:"h,help"`
+	Version      bool     `cli:"v,version"`
 	IncludePaths []string `cli:"I,include_path"`
 	Overwrite    bool     `cli:"overwrite"`
 
