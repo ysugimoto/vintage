@@ -7,9 +7,7 @@ This project is subset of [falco](https://github.com/ysugimoto/falco), which is 
 falco also includes this project to transpile VCLs inside that tool, then vintage provides the runtimes on execution.
 Before the transpilation, vintage checks your VCLs by falco linter so you need to have a valid VCLs on the falco.
 
-## How to use
-
-### CLI
+## CLI
 
 Donwload cli command from [release]() page and place it at your `$PATH`.
 Example of transpilation is the following:
