@@ -2,7 +2,6 @@ package fastly
 
 import (
 	"bytes"
-	"fmt"
 	"go/format"
 	"text/template"
 
@@ -45,7 +44,6 @@ func (tf *FastlyTransformer) Transform(rslv resolver.Resolver) ([]byte, error) {
 	}
 	source, err := format.Source(out.Bytes())
 	if err != nil {
-		fmt.Println(out.String())
 		return nil, errors.WithStack(err)
 	}
 	return source, nil

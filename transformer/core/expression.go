@@ -107,10 +107,11 @@ func (tf *CoreTransformer) transformIdentValue(ident *ast.Ident) (*value.Value, 
 		if matched, _ := regexp.MatchString(`^[1-9]{1,2}$`, index); !matched {
 			return nil, TransformError(&ident.GetMeta().Token, "invalid regexp capture index: %s", name)
 		}
-		return value.NewValue(
-			value.STRING,
-			fmt.Sprintf("%s.At(%s)", tf.regexMatchedStack.Last(), index),
-		), nil
+		group := tf.regexMatchedStack.Last()
+		if group == "" {
+			return nil, TransformError(&ident.GetMeta().Token, "Regular expression captured group is not found")
+		}
+		return value.NewValue(value.STRING, fmt.Sprintf("%s.At(%s)", group, index)), nil
 	} else if _, ok := Identifiers[name]; ok {
 		return value.NewValue(value.IDENT, name), nil
 	} else if v, err := tf.variables.Get(name); err == nil {

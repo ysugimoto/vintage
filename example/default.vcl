@@ -42,11 +42,9 @@ director example_director random {
 
 sub vcl_recv {
   #Fastly recv
-  // declare local var.Default INTEGER;
-  // set var.Default= 100;
   set req.backend = example_com;
   set req.http.Foo = {" foo bar baz "};
-  if (req.http.Foo == "foo") {
+  if (req.http.Foo ~ "foo") {
     call custom_logger;
   } else {
     set req.http.Bar = "bar";

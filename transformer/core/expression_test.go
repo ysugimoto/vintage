@@ -106,8 +106,9 @@ func TestTransformExpression(t *testing.T) {
 		{
 			input: `set req.http.Foo = ("foobar" ~ "bar");`,
 			expect: value.NewValue(value.STRING, "vintage.ToString((v__fixed))", value.Prepare(
-				`v__fixed, err := re.Match(`+"`bar`"+`, "foobar")`,
+				`v__fixed, v__fixed_group, err := vintage.RegexpMatch(`+"`bar`"+`, "foobar")`,
 				value.ErrorCheck,
+				`_ = v__fixed_group // implicitly avoid compilation error`,
 			)),
 		},
 		{
@@ -185,8 +186,8 @@ func TestTransformIdentValue(t *testing.T) {
 			expect: value.NewValue(value.STRING, "local__FOO"),
 		},
 		{
-			input:  `re.group.1`,
-			expect: value.NewValue(value.STRING, "re.At(1)"),
+			input:   `re.group.1`,
+			isError: true,
 		},
 		{
 			input:  `aes256`,
