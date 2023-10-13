@@ -44,20 +44,21 @@ import (
 )
 
 func main() {
-    // Set up VCL resolver to include another modules
+	// Set up VCL resolver to include another modules
 	rslv, err := resolver.NewFileResolvers("/path/to/entrypoint.vcl", []string{})
 	if err != nil {
 		panic(err)
 	}
 
-    // Initialize remote resource fetcher.
-    // You need to specify Fastly service id and api token to fetch resources
+	// Initialize remote resource fetcher.
+	// You need to specify Fastly service id and api token to fetch resources
 	fetcher := remote.NewFastlyApiFetcher(
 		os.Getenv("FASTLY_SERVICE_ID"),
 		os.Getenv("FASTLY_API_TOKEN"),
 		10*time.Second,
 	)
-    // Do fetch remote resources
+
+	// Do fetch remote resources
 	s, err := snippets.Fetch(fetcher)
 	if err != nil {
 		panic(err)
@@ -66,13 +67,13 @@ func main() {
 		panic(err)
 	}
 
-    // Let's transform - buf variable is []byte of excutable go code
+	// Let's transform - buf variable is []byte of excutable go code
 	buf, err := fastly.NewFastlyTransformer(core.WithSnippets(s)).Transform(rslv[0])
 	if err != nil {
 		panic(err)
 	}
 
-    // Write buffer to the file
+	// Write buffer to the file
 	fp, err := os.OpenFile("/path/to/compute-project/vintage.go", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0o644)
 	if err != nil {
 		panic(err)
