@@ -1,6 +1,6 @@
-# Vintage
+# vintage
 
-`Vintage` is a Fastly VCL runtime inside a Edge.
+`vintage` is a Fastly VCL runtime in a Edge.
 This project provides runtime and transformer, vintage transpiles your VCLs into executable code on the edge (e.g Fastly Compute).
 
 This project is subset of [falco](https://github.com/ysugimoto/falco), which is VCL linter and interpreter.
@@ -82,4 +82,19 @@ func main() {
 	defer fp.Close()
 	fp.Write(buf)
 }
+```
 
+## Contribution
+
+- Fork this repository
+- Customize / Fix problem
+- Send PR :-)
+- Or feel free to create issues for us. We'll look into it
+
+## License
+
+MIT License
+
+## Contributors
+
+- [@ysugimoto](https://github.com/ysugimoto)
