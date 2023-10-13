@@ -18,70 +18,44 @@ vintage transpile --target compute --package main --output vintage.go
 
 Describe CLI option:
 
-| option name   | required | default                  | description                               |
-|:-------------:|:--------:|:------------------------:|:------------------------------------------|
-| -t, --target  | no       | compute (Fastly Compute) | Transpile target of edge platform         |
-| -p, --package | no       | main                     | Go package name of transpiled program     |
-| -o, --output  | no       | vintage.go               | Output filename (must have .go extention) |
+| option name   | required | default                  | description                                 |
+|:-------------:|:--------:|:------------------------:|:--------------------------------------------|
+| -t, --target  | no       | compute (Fastly Compute) | Transpile target of edge platform           |
+| -p, --package | no       | main                     | Go package name of transpiled program       |
+| -o, --output  | no       | ./vintage.go             | Output filename (should have .go extention) |
 
-## Programmable
+### Supported Runtimes
 
-vintage depends on `falco` so you need to install as dependency.
-Below example tranpiles with Fastly remote snippets:
+Supprted runtimes, which can specify on `-t, --target` cli option are following:
+
+- `compute (default)` : Fastly Compute Runtime, the generated code could run in Compute@Edge
+- `native` : Generates raw Golang code, could run in common platforms that Golang can compile to
+
+## Use Generated Program
+
+After transpilation succeeded, you can get single go file that at `--output` cli option.
+The generated file exposes `VclHandler` function that implements server handler corresponds to target platform.
+For example, `fsthttp.Handler` for Fastly Compute or `http.Handler` for native.
+
+To work application correctly, you need to do following steps:
+
+1. The generated code has some dependecies so needs to run `go mod tidy` to install dependencies
+2. If you transpiled for Fastly Compute, need to set up `fastly.toml` for Golang. see [documentation](https://developer.fastly.com/learning/compute/go/) in detail
+3. You need to implement a little to start server. Fastly compute example is the following:
 
 ```go
 package main
 
 import (
-	"os"
-	"time"
-
-	"github.com/ysugimoto/falco/remote"
-	"github.com/ysugimoto/falco/resolver"
-	"github.com/ysugimoto/falco/snippets"
-	"github.com/ysugimoto/vintage/transformer/core"
-	"github.com/ysugimoto/vintage/transformer/fastly"
+	"github.com/fastly/compute-sdk-go/fsthttp"
 )
 
 func main() {
-	// Set up VCL resolver to include another modules
-	rslv, err := resolver.NewFileResolvers("/path/to/entrypoint.vcl", []string{})
-	if err != nil {
-		panic(err)
-	}
-
-	// Initialize remote resource fetcher.
-	// You need to specify Fastly service id and api token to fetch resources
-	fetcher := remote.NewFastlyApiFetcher(
-		os.Getenv("FASTLY_SERVICE_ID"),
-		os.Getenv("FASTLY_API_TOKEN"),
-		10*time.Second,
-	)
-
-	// Do fetch remote resources
-	s, err := snippets.Fetch(fetcher)
-	if err != nil {
-		panic(err)
-	}
-	if err := s.FetchLoggingEndpoint(fetcher); err != nil {
-		panic(err)
-	}
-
-	// Let's transform - buf variable is []byte of excutable go code
-	buf, err := fastly.NewFastlyTransformer(core.WithSnippets(s)).Transform(rslv[0])
-	if err != nil {
-		panic(err)
-	}
-
-	// Write buffer to the file
-	fp, err := os.OpenFile("/path/to/compute-project/vintage.go", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0o644)
-	if err != nil {
-		panic(err)
-	}
-	defer fp.Close()
-	fp.Write(buf)
+	fsthttp.Serve(VclHandler())
 }
 ```
+
+It's very tiny implementation! After that, you are ready to build and deploy VCL application. 
 
 ## Contribution
 
