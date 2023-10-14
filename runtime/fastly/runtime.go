@@ -26,10 +26,6 @@ type Runtime struct {
 	Geo             *geo.Geo
 }
 
-// func (r *Runtime) Context() *core.Runtime[*Runtime] {
-// 	return r.Runtime
-// }
-
 func NewRuntime(w fsthttp.ResponseWriter, r *fsthttp.Request) (*Runtime, error) {
 	g, err := geo.Lookup(net.ParseIP(r.RemoteAddr))
 	if err != nil {
@@ -73,11 +69,11 @@ func (r *Runtime) Proxy(ctx context.Context, backendName string) (vintage.RawHea
 	return vintage.RawHeader(resp.Header), nil
 }
 
-func (r *Runtime) WriteResponse() (int64, int64, int64, error) {
+func (r *Runtime) WriteResponse() ([3]int64, error) {
 	r.ClientResponse.Header().Reset(r.BackendResponse.Header)
 	written, err := io.Copy(r.ClientResponse, r.BackendResponse.Body)
 	if err != nil {
-		return 0, 0, 0, errors.WithStack(err)
+		return [3]int64{}, errors.WithStack(err)
 	}
 	// Status line
 	statusSize := int64(len(fmt.Sprintf(
@@ -94,7 +90,11 @@ func (r *Runtime) WriteResponse() (int64, int64, int64, error) {
 		headerSize--
 	}
 	// return with header, body, all bytes
-	return headerSize, written, statusSize + headerSize + written, nil
+	return [3]int64{
+		headerSize,
+		written,
+		statusSize + headerSize + written,
+	}, nil
 }
 
 func (r *Runtime) CreateBackendRequest() vintage.RawHeader {

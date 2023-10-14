@@ -54,7 +54,7 @@ func (r *Runtime) Execute(ctx context.Context) error {
 		r.ClientIp = net.ParseIP(r.Request.RemoteAddr[:idx])
 	}
 
-	// Release some pointer resources in order to prevent memory leak
+	// Release pointer resources in order to prevent memory leak
 	defer r.Release()
 
 	if err := r.Lifecycle(ctx, r); err != nil {
@@ -106,14 +106,14 @@ func (r *Runtime) Proxy(ctx context.Context, backendName string) (vintage.RawHea
 	return vintage.RawHeader(resp.Header), nil
 }
 
-func (r *Runtime) WriteResponse() (int64, int64, int64, error) {
+func (r *Runtime) WriteResponse() ([3]int64, error) {
 	h := r.ClientResponse.Header()
 	for key, val := range r.BackendResponse.Header {
 		h[key] = val
 	}
 	written, err := io.Copy(r.ClientResponse, r.BackendResponse.Body)
 	if err != nil {
-		return 0, 0, 0, errors.WithStack(err)
+		return [3]int64{}, errors.WithStack(err)
 	}
 	// Status line
 	statusSize := int64(len(fmt.Sprintf(
@@ -130,7 +130,11 @@ func (r *Runtime) WriteResponse() (int64, int64, int64, error) {
 		headerSize--
 	}
 	// return with header, body, all bytes
-	return headerSize, written, statusSize + headerSize + written, nil
+	return [3]int64{
+		headerSize,
+		written,
+		statusSize + headerSize + written,
+	}, nil
 }
 
 func (r *Runtime) CreateBackendRequest() vintage.RawHeader {

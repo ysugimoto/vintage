@@ -258,11 +258,13 @@ func (c *Runtime[T]) lifecycleDeliver(ctx context.Context, r T) error {
 }
 
 func (c *Runtime[T]) lifecycleLog(ctx context.Context, r T) error {
-	var err error
-	c.ResponseHeaderBytesWritten, c.ResponseBodyBytesWritten, c.ResponseBytesWritten, err = r.WriteResponse()
+	sizes, err := r.WriteResponse()
 	if err != nil {
 		return errors.WithStack(err)
 	}
+	c.ResponseHeaderBytesWritten = sizes[0]
+	c.ResponseBodyBytesWritten = sizes[1]
+	c.ResponseBytesWritten = sizes[2]
 	c.ResponseCompleted = true
 
 	if vclLog, ok := c.Subroutines[fastlySubroutineLog]; ok {

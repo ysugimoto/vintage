@@ -7,6 +7,9 @@ import (
 )
 
 type EdgeRuntime interface {
+	// Execute starts VCL request lifecycle.
+	Execute(context.Context) error
+
 	// CreateBackendRequest is hook point of making bereq from req
 	// This hook will be called before calling vcl_pass or vcl_miss
 	// Must return raw headers of BackendRequest
@@ -32,11 +35,11 @@ type EdgeRuntime interface {
 
 	// WriteResponse is hook point for sending client response.
 	// This hook will be called before calling vcl_log
-	// the response values are:
-	// 1. written header bytes
-	// 2. written body bytes
+	// the response is exact 3 length of in64 slice:
+	// 0. written header bytes
+	// 1. written body bytes
 	// 2. written response bytes (include status line)
-	WriteResponse() (int64, int64, int64, error)
+	WriteResponse() ([3]int64, error)
 
 	// Cache if hook point for lookup cache
 	// @FIXME: Edge Runtime caching (e.g SimpleCache in Compute@Edge) is limited, so currently unsupported)

@@ -21,6 +21,10 @@ func newTestRuntime() *core.Runtime[*TestRuntime] {
 }
 
 // Fake implementation of EdgeRuntime interface
+func (r *TestRuntime) Execute(ctx context.Context) error {
+	return nil
+}
+
 func (r *TestRuntime) CreateBackendRequest() vintage.RawHeader {
 	return vintage.RawHeader(map[string][]string{})
 }
@@ -37,6 +41,6 @@ func (r *TestRuntime) Proxy(ctx context.Context, backend string) (vintage.RawHea
 	return vintage.RawHeader(map[string][]string{}), nil
 }
 
-func (r *TestRuntime) WriteResponse() (int64, int64, int64, error) {
-	return 0, 0, 0, nil
+func (r *TestRuntime) WriteResponse() ([3]int64, error) {
+	return [3]int64{0, 0, 0}, nil
 }
