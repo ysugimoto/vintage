@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+env:
+  FASTLY_SERVICE_ID: ${{ secrets.FASTLY_SERVICE_ID }}
+  FASTLY_API_TOKEN: ${{ secrets.FASTLY_API_TOKEN }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
