@@ -34,6 +34,8 @@ github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/stretchr/testify v1.4.0 h1:2E4SXV/wtOkTonXsotYi4li6zVWxYlZuYNCXe9XRJyk=
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
+github.com/ysugimoto/falco v1.0.0 h1:PcVTV5JLQeawz9700ChjThv8/NjagKreNqeV2lM60Fs=
+github.com/ysugimoto/falco v1.0.0/go.mod h1:05LwHHA2OBxkSE7hFwZE+jb99EMq6awG3hi30AngtHE=
 github.com/ysugimoto/twist v0.10.2 h1:0wDTWBzbPyuXF3E6NV/KtWODP5odlDUF0W8t9jDLbDo=
 github.com/ysugimoto/twist v0.10.2/go.mod h1:T6V0OlIucJ42GXo5vEs26LWgBmYbe0+3KHnzdKG4z5I=
 golang.org/x/sync v0.3.0 h1:ftCYgMx6zT/asHUrPw8BLLscYtGznsLAnjq5RH9P66E=

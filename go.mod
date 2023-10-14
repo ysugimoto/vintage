@@ -2,8 +2,6 @@ module github.com/ysugimoto/vintage
 
 go 1.21
 
-replace github.com/ysugimoto/falco => ../falco
-
 require (
 	github.com/avct/uasurfer v0.0.0-20191028135549-26b5daa857f1
 	github.com/fastly/compute-sdk-go v1.0.0
@@ -13,7 +11,7 @@ require (
 	github.com/google/uuid v1.3.1
 	github.com/pkg/errors v0.9.1
 	github.com/pquerna/otp v1.4.0
-	github.com/ysugimoto/falco v0.24.0
+	github.com/ysugimoto/falco v1.0.0
 	github.com/ysugimoto/twist v0.10.2
 )
 
