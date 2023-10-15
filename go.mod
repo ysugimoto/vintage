@@ -11,7 +11,7 @@ require (
 	github.com/google/uuid v1.3.1
 	github.com/pkg/errors v0.9.1
 	github.com/pquerna/otp v1.4.0
-	github.com/ysugimoto/falco v1.0.0
+	github.com/ysugimoto/falco v1.0.1
 	github.com/ysugimoto/twist v0.10.2
 )
 
