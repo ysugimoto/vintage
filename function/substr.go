@@ -1,7 +1,6 @@
 package function
 
 import (
-	"github.com/ysugimoto/vintage/errors"
 	"github.com/ysugimoto/vintage/runtime/core"
 )
 
@@ -27,6 +26,9 @@ func Substr[T core.EdgeRuntime](
 	var start, end int
 	if offset < 0 {
 		start = len(input) + int(offset)
+		if start < 0 {
+			return "", nil
+		}
 	} else {
 		start = int(offset)
 	}
@@ -35,16 +37,11 @@ func Substr[T core.EdgeRuntime](
 	case length == nil:
 		end = len(input)
 	case *length < 0:
-		if offset < 0 {
-			end = len(input) + int(*length) + 1
-		} else {
-			end = len(input) + int(*length)
-		}
+		end = len(input) + int(*length)
 	default:
-		if offset < 0 {
-			end = start + int(*length)
-		} else {
-			end = start + int(*length) + 1
+		end = start + int(*length)
+		if end < 0 {
+			return "", nil
 		}
 	}
 	if end > len(input) {
@@ -52,10 +49,7 @@ func Substr[T core.EdgeRuntime](
 	}
 
 	if start > len(input) {
-		return "", errors.FunctionError(
-			Substr_Name,
-			"Invalid start offset %d against input string %s", offset, input,
-		)
+		return "", nil
 	}
 	if end <= start {
 		return "", nil

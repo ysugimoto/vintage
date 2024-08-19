@@ -1,7 +1,6 @@
 package function
 
 import (
-	"math"
 	"math/rand"
 
 	"github.com/ysugimoto/vintage/runtime/core"
@@ -18,8 +17,13 @@ func Randombool_seeded[T core.EdgeRuntime](
 	numerator, denominator, seed int64,
 ) (bool, error) {
 
-	rand.New(rand.NewSource(seed))
-	r := rand.Int63n(math.MaxInt64)
+	if denominator <= 0 {
+		return false, nil
+	}
 
-	return r/math.MaxInt64 < numerator/denominator, nil
+	r := rand.New(rand.NewSource(seed))
+	rv := r.Float64()
+	ratio := float64(numerator) / float64(denominator)
+
+	return rv < ratio, nil
 }

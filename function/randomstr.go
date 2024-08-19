@@ -29,7 +29,7 @@ func Randomstr[T core.EdgeRuntime](
 		characters = []rune(optional[0])
 	}
 
-	rand.New(rand.NewSource(time.Now().UnixNano()))
+	rand.Seed(time.Now().UnixNano())
 	ret := make([]rune, int(length))
 
 	for i := 0; i < int(length); i++ {

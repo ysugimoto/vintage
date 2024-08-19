@@ -8,6 +8,20 @@ import (
 )
 
 const Regsub_Name = "regsub"
+const regsubExpandReplace = "${$1}"
+
+var regsubExpandRE = regexp.MustCompile(`\\([0-9]+)`)
+
+func replaceOneString(re *regexp.Regexp, input, replacement string) string {
+	replace := true
+	return re.ReplaceAllStringFunc(input, func(m string) string {
+		if !replace {
+			return m
+		}
+		replace = false
+		return re.ReplaceAllString(m, replacement)
+	})
+}
 
 func Regsub_convertGoExpandString(replacement string) (string, bool) {
 	var converted []rune
@@ -60,23 +74,6 @@ func Regsub[T core.EdgeRuntime](
 		)
 	}
 
-	// Note: VCL's regsub uses PCRE regexp but golang is not PCRE
-	matches := re.FindStringSubmatchIndex(input)
-	if matches == nil {
-		return input, nil
-	}
-
-	if expand, found := Regsub_convertGoExpandString(replacement); found {
-		replaced := re.ExpandString([]byte{}, expand, input, matches)
-		return string(replaced), nil
-	}
-	var replaced string
-	if matches[0] > 0 {
-		replaced += input[:matches[0]]
-	}
-	replaced += replacement
-	if matches[1] < len(input)-1 {
-		replaced += input[matches[1]:]
-	}
-	return replaced, nil
+	expand := regsubExpandRE.ReplaceAllString(replacement, regsubExpandReplace)
+	return replaceOneString(re, input, expand), nil
 }
