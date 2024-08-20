@@ -107,7 +107,7 @@ func (h *Header) removeCookieByName(cookieName string) {
 
 		var sub []string
 		var part string
-		for len(line) > 0 { // continue since we have rest
+		for line != "" { // continue since we have rest
 			part, line, _ = strings.Cut(line, ";")
 			trimmedPart := textproto.TrimString(part)
 			if trimmedPart == "" {
@@ -141,7 +141,7 @@ func readCookie(lines []string, filter string) string {
 		line = textproto.TrimString(line)
 
 		var part string
-		for len(line) > 0 { // continue since we have rest
+		for line != "" { // continue since we have rest
 			part, line, _ = strings.Cut(line, ";")
 			part = textproto.TrimString(part)
 			if part == "" {

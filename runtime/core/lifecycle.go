@@ -46,7 +46,8 @@ func (c *Runtime[T]) Lifecycle(ctx context.Context, r T) error {
 		if err = c.lifecycleHash(ctx, r); err != nil {
 			return errors.WithStack(err)
 		}
-		hit, err := r.LookupCache()
+		var hit bool
+		hit, err = r.LookupCache()
 		if err != nil {
 			return errors.WithStack(err)
 		}
