@@ -13,6 +13,7 @@ const (
 	fastlySubroutineRecv    = "vcl_recv"
 	fastlySubroutineHash    = "vcl_hash"
 	fastlySubroutineMiss    = "vcl_miss"
+	fastlySubroutineHit     = "vcl_hit"
 	fastlySubroutinePass    = "vcl_pass"
 	fastlySubroutineError   = "vcl_error"
 	fastlySubroutineFetch   = "vcl_fetch"
@@ -45,8 +46,15 @@ func (c *Runtime[T]) Lifecycle(ctx context.Context, r T) error {
 		if err = c.lifecycleHash(ctx, r); err != nil {
 			return errors.WithStack(err)
 		}
-		// TODO: consider lookup cache
-		err = c.lifecycleMiss(ctx, r)
+		hit, err := r.LookupCache()
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		if hit {
+			err = c.lifecycleHit(ctx, r)
+		} else {
+			err = c.lifecycleMiss(ctx, r)
+		}
 	default:
 		err = fmt.Errorf("Unexpected state returned: %s in RECV", state)
 	}
@@ -108,9 +116,33 @@ func (c *Runtime[T]) lifecycleMiss(ctx context.Context, r T) error {
 	return nil
 }
 
-// nolint:unused
 func (c *Runtime[T]) lifecycleHit(ctx context.Context, r T) error {
-	// TODO: nothing to do because Edge runtime does have caching behavior on its runtime
+	var state vintage.State = vintage.DELIVER
+	var err error
+
+	if vclHit, ok := c.Subroutines[fastlySubroutineHit]; ok {
+		state, err = vclHit(r)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	switch state {
+	case vintage.DELIVER, vintage.NONE:
+		err = c.lifecycleDeliver(ctx, r)
+	case vintage.PASS:
+		err = c.lifecyclePass(ctx, r)
+	case vintage.ERROR:
+		err = c.lifecycleError(ctx, r)
+	case vintage.RESTART:
+		err = c.lifecycleRestart(ctx, r)
+	default:
+		err = fmt.Errorf("Unexpected state returned: %s in HIT", state)
+	}
+
+	if err != nil {
+		return errors.WithStack(err)
+	}
 	return nil
 }
 
@@ -224,6 +256,10 @@ func (c *Runtime[T]) lifecycleError(ctx context.Context, r T) error {
 func (c *Runtime[T]) lifecycleDeliver(ctx context.Context, r T) error {
 	var state vintage.State = vintage.LOG
 	var err error
+
+	if err := r.SaveCache(); err != nil {
+		return errors.WithStack(err)
+	}
 
 	if rh, err := r.CreateClientResponse(); err != nil {
 		return errors.WithStack(err)

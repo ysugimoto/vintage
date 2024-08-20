@@ -135,3 +135,16 @@ func GenerateXid() string {
 
 	return string(dst)
 }
+
+// Fastly follows its own cache freshness rules
+// see: https://developer.fastly.com/learning/concepts/cache-freshness/
+var unCacheableStatusCodes = []int{200, 203, 300, 301, 302, 404, 410}
+
+func IsCacheableStatusCode(statusCode int) bool {
+	for _, v := range unCacheableStatusCodes {
+		if v == statusCode {
+			return true
+		}
+	}
+	return false
+}

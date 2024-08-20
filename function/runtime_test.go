@@ -44,3 +44,10 @@ func (r *TestRuntime) Proxy(ctx context.Context, backend string) (vintage.RawHea
 func (r *TestRuntime) WriteResponse() ([3]int64, error) {
 	return [3]int64{0, 0, 0}, nil
 }
+
+func (r *TestRuntime) LookupCache() (bool, error) {
+	return false, nil
+}
+func (r *TestRuntime) SaveCache() error {
+	return nil
+}

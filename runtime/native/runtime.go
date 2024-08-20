@@ -3,11 +3,13 @@ package native
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/ysugimoto/vintage"
@@ -22,6 +24,8 @@ type Runtime struct {
 	BackendResponse *http.Response
 	Response        *http.Response
 	ClientResponse  http.ResponseWriter
+	Cache           vintage.CacheDriver
+	cacheItem       *CacheEntry
 }
 
 func NewRuntime(w http.ResponseWriter, r *http.Request) (*Runtime, error) {
@@ -29,6 +33,7 @@ func NewRuntime(w http.ResponseWriter, r *http.Request) (*Runtime, error) {
 		Runtime:        core.NewRuntime[*Runtime](r.Header),
 		ClientResponse: w,
 		Request:        r,
+		Cache:          newInMemoryCache(),
 	}
 	rt.OriginalHost = r.Host
 	return rt, nil
@@ -43,6 +48,8 @@ func (r *Runtime) Release() {
 	if r.Response != nil {
 		r.Response.Body.Close()
 	}
+	// Release cache object
+	r.cacheItem = nil
 }
 
 func (r *Runtime) Execute(ctx context.Context) error {
@@ -182,4 +189,67 @@ func (r *Runtime) CreateObjectResponse(statusCode int, response string) (vintage
 	}
 
 	return vintage.RawHeader(r.BackendResponse.Header), nil
+}
+
+func (r *Runtime) LookupCache() (bool, error) {
+	data, err := r.Cache.Get(r.RequestHash)
+	if err != nil || data == nil {
+		r.BackendResponse.Header.Set("X-Cache", "MISS")
+		return false, nil
+	}
+	var entry CacheEntry
+	if err := json.Unmarshal(data, &entry); err != nil {
+		return false, errors.WithStack(err)
+	}
+	if _, err := r.CreateObjectResponse(http.StatusOK, string(entry.Buffer)); err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	r.cacheItem = &entry
+
+	entry.Hits++
+	r.BackendResponse.Header.Set("X-Cache-Hits", fmt.Sprint(entry.Hits))
+	r.BackendResponse.Header.Set("Age", fmt.Sprint(time.Since(entry.EntryTime).Seconds()))
+	r.BackendResponse.Header.Set("X-Cache", "HIT")
+	return true, nil
+}
+
+func (r *Runtime) SaveCache() error {
+	// If backend response is not set, skip
+	if r.BackendResponse == nil {
+		return nil
+	}
+	// Set backend response is cacheable or not
+	r.BackendResponseCachable = r.ObjectCacheable()
+	if !r.BackendResponseCachable {
+		return nil
+	}
+	// Skip if backend response TTL is set to zero
+	if r.BackendResponseTTL.Seconds() == 0 {
+		return nil
+	}
+
+	// If cache already exists, update record
+	if r.cacheItem == nil {
+		body, err := r.ResponseBody(r.BackendResponse)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		now := time.Now()
+		r.cacheItem = &CacheEntry{
+			Buffer:    []byte(body),
+			TTL:       now.Add(r.BackendResponseTTL),
+			EntryTime: now,
+			Hits:      0,
+		}
+	}
+
+	data, err := json.Marshal(r.cacheItem)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	if err := r.Cache.Set(r.RequestHash, data, r.BackendResponseTTL); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
