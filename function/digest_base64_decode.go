@@ -74,6 +74,7 @@ func Digest_base64_decode_removeInvalidCharacters(input string) string {
 			if peek, err := r.Peek(1); err != nil && peek[0] == 0x3D {
 				removed.WriteByte(b)
 				removed.WriteByte(b)
+				// nolint:errcheck
 				r.ReadByte() // skip next "=" character
 				continue
 			}
