@@ -20,7 +20,7 @@ func Test_Utf8_substr(t *testing.T) {
 		isError bool
 	}{
 		{input: "abあdefg", offset: 3, length: 0, expect: "defg"},
-		{input: "abあdefg", offset: 0, length: 2, expect: "abあ"},
+		{input: "abあdefg", offset: 0, length: 2, expect: "ab"},
 		{input: "abあdefg", offset: 5, length: 3, expect: "fg"},
 		{input: "abあ", offset: 4, length: 2, expect: "", isError: true},
 		{input: "abあ", offset: 3, length: 2, expect: ""},

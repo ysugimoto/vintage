@@ -20,13 +20,13 @@ func Test_Substr(t *testing.T) {
 		isError bool
 	}{
 		{input: "abcdefg", offset: 3, length: 0, expect: "defg"},
-		{input: "abcdefg", offset: 0, length: 2, expect: "abc"},
+		{input: "abcdefg", offset: 0, length: 2, expect: "ab"},
 		{input: "abcdefg", offset: 5, length: 3, expect: "fg"},
 		{input: "abc", offset: 4, length: 2, expect: "", isError: true},
 		{input: "abc", offset: 3, length: 2, expect: ""},
 		{input: "abcdefg", offset: -3, length: 2, expect: "ef"},
 		{input: "abcdefg", offset: 1, length: -3, expect: "bcd"},
-		{input: "abcdefg", offset: -4, length: -3, expect: "de"},
+		{input: "abcdefg", offset: -4, length: -3, expect: "d"},
 	}
 
 	for i, tt := range tests {

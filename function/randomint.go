@@ -19,7 +19,7 @@ func Randomint[T core.EdgeRuntime](
 ) (int64, error) {
 
 	rand.New(rand.NewSource(time.Now().UnixNano()))
-	r := rand.Int63n(to - from)
+	r := rand.Int63n(to - from + 1)
 
 	return r + from, nil
 }

@@ -1,7 +1,8 @@
 package function
 
 import (
-	"github.com/ysugimoto/vintage/errors"
+	"unicode/utf8"
+
 	"github.com/ysugimoto/vintage/runtime/core"
 )
 
@@ -19,15 +20,22 @@ func Utf8_substr[T core.EdgeRuntime](
 	optional ...int64,
 ) (string, error) {
 
+	if !utf8.Valid([]byte(s)) {
+		return "", nil
+	}
+	input := []rune(s)
+
 	var length *int64
 	if len(optional) > 0 {
 		length = &optional[0]
 	}
 
-	input := []rune(s)
 	var start, end int
 	if offset < 0 {
 		start = len(input) + int(offset)
+		if start < 0 {
+			return "", nil
+		}
 	} else {
 		start = int(offset)
 	}
@@ -36,16 +44,11 @@ func Utf8_substr[T core.EdgeRuntime](
 	case length == nil:
 		end = len(input)
 	case *length < 0:
-		if offset < 0 {
-			end = len(input) + int(*length) + 1
-		} else {
-			end = len(input) + int(*length)
-		}
+		end = len(input) + int(*length)
 	default:
-		if offset < 0 {
-			end = start + int(*length)
-		} else {
-			end = start + int(*length) + 1
+		end = start + int(*length)
+		if end < 0 {
+			return "", nil
 		}
 	}
 	if end > len(input) {
@@ -53,10 +56,7 @@ func Utf8_substr[T core.EdgeRuntime](
 	}
 
 	if start > len(input) {
-		return "", errors.FunctionError(
-			Substr_Name,
-			"Invalid start offset %d against input string %s", offset, input,
-		)
+		return "", nil
 	}
 	if end <= start {
 		return "", nil

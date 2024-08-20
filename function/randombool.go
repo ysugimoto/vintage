@@ -1,7 +1,6 @@
 package function
 
 import (
-	"math"
 	"math/rand"
 	"time"
 
@@ -19,8 +18,13 @@ func Randombool[T core.EdgeRuntime](
 	numerator, denominator int64,
 ) (bool, error) {
 
-	rand.New(rand.NewSource(time.Now().UnixNano()))
-	r := rand.Int63n(math.MaxInt64)
+	if denominator <= 0 {
+		return false, nil
+	}
 
-	return r/math.MaxInt64 < numerator/denominator, nil
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	rv := r.Float64()
+	ratio := float64(numerator) / float64(denominator)
+
+	return rv < ratio, nil
 }

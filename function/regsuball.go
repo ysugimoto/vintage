@@ -26,6 +26,6 @@ func Regsuball[T core.EdgeRuntime](
 		)
 	}
 
-	expand, _ := Regsub_convertGoExpandString(replacement)
+	expand := regsubExpandRE.ReplaceAllString(replacement, regsubExpandReplace)
 	return re.ReplaceAllString(input, expand), nil
 }
