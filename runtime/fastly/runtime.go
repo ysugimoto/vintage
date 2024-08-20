@@ -8,6 +8,7 @@ import (
 	"net"
 	"strings"
 
+	cache "github.com/fastly/compute-sdk-go/cache/core"
 	"github.com/fastly/compute-sdk-go/fsthttp"
 	"github.com/fastly/compute-sdk-go/geo"
 	"github.com/pkg/errors"
@@ -142,4 +143,110 @@ func (r *Runtime) CreateObjectResponse(statusCode int, response string) (vintage
 	}
 
 	return vintage.RawHeader(r.BackendResponse.Header), nil
+}
+
+func (r *Runtime) LookupCache() (bool, error) {
+	tx, err := cache.NewTransaction([]byte(r.RequestHash), cache.LookupOptions{
+		RequestHeaders: r.Request.Header,
+	})
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+	defer tx.Close()
+
+	found, err := tx.Found()
+	if err != nil {
+		if err == cache.ErrNotFound {
+			r.BackendResponse.Header.Set("X-Cache", "MISS")
+			return false, nil
+		}
+		return false, errors.WithStack(err)
+	}
+	var buf bytes.Buffer
+	if _, err := buf.ReadFrom(found.Body); err != nil {
+		return false, errors.WithStack(err)
+	}
+	if _, err := r.CreateObjectResponse(fsthttp.StatusOK, buf.String()); err != nil {
+		return false, errors.WithStack(err)
+	}
+	r.BackendResponse.Header.Set("X-Cache-Hits", fmt.Sprint(found.Hits))
+	r.BackendResponse.Header.Set("Age", fmt.Sprint(found.Age.Seconds()))
+	r.BackendResponse.Header.Set("X-Cache", "HIT")
+
+	return true, nil
+}
+
+func (r *Runtime) SaveCache() error {
+	// If backend response is not set, skip
+	if r.BackendResponse == nil {
+		return nil
+	}
+	// Set backend response is cacheable or not
+	r.BackendResponseCachable = r.ObjectCacheable()
+	if !r.BackendResponseCachable {
+		return nil
+	}
+	// Skip if backend response TTL is set to zero
+	if r.BackendResponseTTL.Seconds() == 0 {
+		return nil
+	}
+
+	tx, err := cache.NewTransaction([]byte(r.RequestHash), cache.LookupOptions{
+		RequestHeaders: r.Request.Header,
+	})
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer tx.Close()
+
+	if _, err := tx.Found(); err != nil {
+		// Insert new cache if cache is not found
+		if err != cache.ErrNotFound {
+			return errors.WithStack(err)
+		}
+
+		// Insert new cache
+		if !tx.MustInsert() {
+			return errors.WithStack(err)
+		}
+		contents, err := r.ResponseBody(r.BackendResponse)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		w, _, err := tx.InsertAndStreamBack(cache.WriteOptions{
+			TTL:            r.BackendResponseTTL,
+			RequestHeaders: r.Request.Header,
+			SurrogateKeys:  r.BackendResponse.Header.Values("Surrogate-Key"),
+			Length:         uint64(len(contents)),
+		})
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		if _, err := io.WriteString(w, contents); err != nil {
+			return errors.WithStack(err)
+		}
+		return nil
+	}
+
+	// Overwrite cache if needed
+	if !tx.MustInsertOrUpdate() {
+		return nil
+	}
+	contents, err := r.ResponseBody(r.BackendResponse)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	w, err := tx.Insert(cache.WriteOptions{
+		TTL:            r.BackendResponseTTL,
+		RequestHeaders: r.Request.Header,
+		SurrogateKeys:  r.BackendResponse.Header.Values("Surrogate-Key"),
+		Length:         uint64(len(contents)),
+	})
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err := io.WriteString(w, contents); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }

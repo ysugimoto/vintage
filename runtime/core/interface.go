@@ -20,7 +20,7 @@ type EdgeRuntime interface {
 	// Must return raw headers of ClientResponse
 	CreateClientResponse() (vintage.RawHeader, error)
 
-	// CreateObjectResponse is hool poing of construct object response.
+	// CreateObjectResponse is hook point of construct object response.
 	// This hook will be called before calling vcl_error.
 	// VCL may call without request proxying like "error 400" statement,
 	// then object (backend response) is nil, so runtime have to construct from empty.
@@ -41,7 +41,16 @@ type EdgeRuntime interface {
 	// 2. written response bytes (include status line)
 	WriteResponse() ([3]int64, error)
 
-	// Cache if hook point for lookup cache
-	// @FIXME: Edge Runtime caching (e.g SimpleCache in Compute@Edge) is limited, so currently unsupported)
-	// Cache(ctx context.Runtime, key string) error
+	// LookupCache is hook point for looking up cache from request hash.
+	// Fastly Compute -> Use SimpleCache (https://pkg.go.dev/github.com/fastly/compute-sdk-go/cache/simple)
+	// Native Runtime -> Arbitrary Implementation (In-Memory, Redis, Memcached, etc)
+	// ServiceWorker  -> Use CacheStorage implementation in JavaScript runtime.
+	LookupCache() (bool, error)
+
+	// SaveCache is hook point for saving cache.
+	// Save cache for cacheable response object.
+	// Fastly Compute -> Use SimpleCache (https://pkg.go.dev/github.com/fastly/compute-sdk-go/cache/simple)
+	// Native Runtime -> Arbitrary Implementation (In-Memory, Redis, Memcached, etc)
+	// ServiceWorker  -> Use CacheStorage implementation in JavaScript runtime.
+	SaveCache() error
 }
