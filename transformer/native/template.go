@@ -21,12 +21,15 @@ func errorHandler(w http.ResponseWriter, err error) {
 	fmt.Fprint(w, err.Error())
 }
 
-func VclHandler() http.Handler {
+func VclHandler(opts ...HandlerOption) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		runtime, err := native.NewRuntime(w, r)
 		if err != nil {
 			errorHandler(w, err)
 			return
+		}
+		for i := range opts {
+			opts[i](r)
 		}
 
 		runtime.Register(
@@ -47,5 +50,13 @@ func VclHandler() http.Handler {
 			errorHandler(w, err)
 		}
 	})
+}
+
+type HandlerOption func(r *native.Runtime)
+
+func WithCacheDriver(driver vintage.CacheDriver) HandlerOption {
+	return func(r *native.Runtime) {
+		r.Cache = driver
+	}
 }
 `

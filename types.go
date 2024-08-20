@@ -83,3 +83,8 @@ type Logger interface {
 
 // Logger interface creator function in order to inject Logger interface from each runtimes
 type LoggerInitiator func(name string) (io.Writer, error)
+
+type CacheDriver interface {
+	Get(key string) ([]byte, error)
+	Set(key string, data []byte, ttl time.Duration) error
+}

@@ -128,7 +128,7 @@ func (d *Director) client(ident RequestIdentity) string {
 // TODO: need basement hash string like req.hash in VCL
 func (d *Director) chash(ident RequestIdentity) string {
 	var circles []uint32
-	var max uint32 = 10000
+	var maxInt uint32 = 10000
 	hashTable := make(map[uint32]string)
 
 	var seed uint32
@@ -147,7 +147,7 @@ func (d *Director) chash(ident RequestIdentity) string {
 			hash.Write([]byte(backend))
 			hash.Write([]byte(fmt.Sprint(i)))
 			h := hash.Sum(nil)
-			num := binary.BigEndian.Uint32(h[:8]) % max
+			num := binary.BigEndian.Uint32(h[:8]) % maxInt
 			hashTable[num] = backend
 			circles = append(circles, num)
 		}
@@ -170,7 +170,7 @@ func (d *Director) chash(ident RequestIdentity) string {
 		hashKey = sha256.Sum256([]byte(ident.Client))
 	}
 
-	k := binary.BigEndian.Uint32(hashKey[:8]) % max
+	k := binary.BigEndian.Uint32(hashKey[:8]) % maxInt
 	index := sort.Search(len(circles), func(i int) bool {
 		return circles[i] >= k
 	})
@@ -185,14 +185,14 @@ func (d *Director) getBackendByHash(hash []byte) string {
 	var target string // determined backend name
 
 	for m := 4; m <= 16; m += 2 {
-		max := uint64(math.Pow(10, float64(m)))
-		num := binary.BigEndian.Uint64(hash[:8]) % max
+		maxInt := uint64(math.Pow(10, float64(m)))
+		num := binary.BigEndian.Uint64(hash[:8]) % maxInt
 
 		for _, v := range d.Backends {
 			backend := v["backend"].(string) // nolint:errcheck
 			bh := sha256.Sum256([]byte(backend))
 			b := binary.BigEndian.Uint64(bh[:8])
-			if b%(max*10) >= num && b%(max*10) < num+max {
+			if b%(maxInt*10) >= num && b%(maxInt*10) < num+maxInt {
 				target = backend
 				goto DETERMINED
 			}
